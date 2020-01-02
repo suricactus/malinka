@@ -1,5 +1,6 @@
 const EventEmitter = require('events');
 const path = require('path');
+const math = require('mathjs');
 const { getSensorTemperature } = require('./hw');
 
 // const DEVICES_DIR = '/sys/bus/w1/devices/';
@@ -60,11 +61,23 @@ class TemperatureReader extends EventEmitter {
     }
   }
 
-  _calcExpectedTemperature({ innerT, outerT }) {
-    return 0.5 * outerT + 37 + (this.config.referenceInnerT - innerT) * 1.5;
+  _calcExpectedTemperature({ innerT, outerT, waterT }) {
+    const scope = {
+      innerT,
+      outerT,
+      waterT,
+      config: this.config,
+    };
+
+    return math.evaluate(this.config.calcExpectedTemperatureFormula, scope);
+    
+    // return 0.5 * outerT + 37 + (this.config.referenceInnerT - innerT) * 1.5;
   }
 
   _calcShouldStartBoiling({ waterT, expectedT }) {
+    if (expectedT < this.config.minimumAllowedWaterT) return false;
+    if (expectedT > this.config.maximumAllowedWaterT) return false;
+
     if (waterT < expectedT) {
       if (this.isBoilerOn) return true;
 

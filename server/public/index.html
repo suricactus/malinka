@@ -1,0 +1,297 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <!--  d meta tags -->
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+  <title>ТЕЦ "Осоговска 2"</title>
+
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
+    integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.3/Chart.min.css">
+
+  <style>
+    .lbl {
+      width: 1rem;
+      height: 1rem;
+      display: inline-block;
+    }
+
+    .lbl-inner {
+      background-color: orange;
+    }
+
+    .lbl-outer {
+      background-color: red;
+    }
+
+    .lbl-water {
+      background-color: blue;
+    }
+  </style>
+</head>
+
+<body>
+  <nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <a class="navbar-brand mb-0 h1" href="#">ТЕЦ "Осоговска 2"</a>
+  </nav>
+
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-sm-6">
+        <div class="card">
+          <div class="row">
+            <div class="col-sm-4">
+              <div class="card-body">
+                <div class="card">
+                  <div class="card-body">Вътрешна t ℃ <span></span></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-sm-4">
+              <div class="card-body">
+                <div class="card">
+                  <div class="card-body">Външна t ℃ <span></span></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-sm-4">
+              <div class="card-body">
+                <div class="card">
+                  <div class="card-body">Вода t ℃ <span></span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-sm-6">
+        <div id="chart">
+          <canvas id="canvas"></canvas>
+        </div>
+      </div>
+
+
+      <div class="col-sm-6">
+        <div class="card">
+          <p>Входните данни от датчиците са съответно:</p>
+          <table class="table table-bordered">
+            <tr>
+              <td>Знак</td>
+              <td>Значение</td>
+              <td>Примерна стойност</td>
+            </tr>
+            <tr>
+              <td>A <span class="lbl lbl-inner"></span></td>
+              <td>Вътрешна температура в ℃</td>
+              <td><input type="text"></td>
+            </tr>
+
+            <tr>
+              <td>B <span class="lbl lbl-outer"></span></td>
+              <td>Външна температура в ℃</td>
+              <td><input type="text"></td>
+            </tr>
+
+            <tr>
+              <td>C <span class="lbl lbl-water"></span></td>
+              <td>Текуща температура на водата в ℃</td>
+              <td><input type="text"></td>
+            </tr>
+          </table>
+          <form>
+            <div class="form-group row">
+              <label for="formula" class="col-sm-2 col-form-label">Формула </label>
+              <div class="col-sm-10">
+                <input type="text" class="form-control" id="formula">
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <div class="col-sm-6">
+        <div id="chart">
+          <table id="results" class="table table-striped">
+            <thead>
+              <tr>
+                <th>
+                  Измерено в
+                </th>
+                <th>
+                  Вътрешна t ℃
+                </th>
+                <th>
+                  Външна t ℃
+                </th>
+                <th>
+                  Водна t ℃
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <template id="tmpl-record-temp">
+                <tr class="t-measured-at"></tr>
+                <tr class="t-inner"></tr>
+                <tr class="t-outer"></tr>
+                <tr class="t-water"></tr>
+              </template>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.3/Chart.bundle.min.js"></script>
+  <script>
+  const socket = new WebSocket('ws://localhost:8000/ws');
+  // const socket = new WebSocket(`ws://${new URL(window.location.href).host}`);
+
+
+  // Connection opened
+  socket.addEventListener('open', function (event) {
+    socket.send('Hello Server!');
+  });
+
+  // Listen for messages
+  socket.addEventListener('message', function (event) {
+    console.log('Message from server ', event.data);
+  });
+
+
+
+
+    const Samples = {};
+
+    Samples.utils = {
+      _seed: 0,
+
+      // Adapted from http://indiegamr.com/generate-repeatable-random-numbers-in-js/
+      srand(seed) {
+        this._seed = seed;
+      },
+
+      rand(min, max) {
+        var seed = this._seed;
+
+        min = min === undefined ? 0 : min;
+        max = max === undefined ? 1 : max;
+
+        this._seed = (seed * 9301 + 49297) % 233280;
+
+        return min + (this._seed / 233280) * (max - min);
+      },
+    };
+    const randomScalingFactor = () => Math.round(Samples.utils.rand(-100, 100));
+
+    // document.getElementById('addData').addEventListener('click', function() {
+    // 	if (config.data.datasets.length > 0) {
+    // 		var month = MONTHS[config.data.labels.length % MONTHS.length];
+    // 		config.data.labels.push(month);
+
+    // 		config.data.datasets.forEach(function(dataset) {
+    // 			dataset.data.push(randomScalingFactor());
+    // 		});
+
+    // 		window.myLine.update();
+    // 	}
+    // });
+
+    var MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+    var config = {
+      type: 'line',
+      data: {
+        labels: ['January', 'February', 'March', 'April', 'May', 'June', 'July'],
+        datasets: [{
+          label: 'Вътрешна t ℃',
+          backgroundColor: 'orange',
+          borderColor: 'orange',
+          data: [
+            randomScalingFactor(),
+            randomScalingFactor(),
+            randomScalingFactor(),
+            randomScalingFactor(),
+            randomScalingFactor(),
+            randomScalingFactor(),
+            randomScalingFactor()
+          ],
+          fill: false,
+        }, {
+          label: 'Външна t ℃',
+          backgroundColor: 'red',
+          borderColor: 'red',
+          data: [
+            randomScalingFactor(),
+            randomScalingFactor(),
+            randomScalingFactor(),
+            randomScalingFactor(),
+            randomScalingFactor(),
+            randomScalingFactor(),
+            randomScalingFactor()
+          ],
+          fill: false,
+        }, {
+          label: 'Вода t ℃',
+          fill: false,
+          backgroundColor: 'blue',
+          borderColor: 'blue',
+          data: [
+            randomScalingFactor(),
+            randomScalingFactor(),
+            randomScalingFactor(),
+            randomScalingFactor(),
+            randomScalingFactor(),
+            randomScalingFactor(),
+            randomScalingFactor()
+          ],
+        }]
+      },
+      options: {
+        responsive: true,
+        title: {
+          display: true,
+          text: 'Графика на температурата'
+        },
+        tooltips: {
+          mode: 'index',
+          intersect: false,
+        },
+        hover: {
+          mode: 'nearest',
+          intersect: true
+        },
+        scales: {
+          xAxes: [{
+            display: true,
+            scaleLabel: {
+              display: true,
+              labelString: 'Month'
+            }
+          }],
+          yAxes: [{
+            display: true,
+            scaleLabel: {
+              display: true,
+              labelString: 'Value'
+            }
+          }]
+        }
+      }
+    };
+
+    window.onload = function () {
+      var ctx = document.getElementById('canvas').getContext('2d');
+      window.myLine = new Chart(ctx, config);
+    };
+  </script>
+
+</body>
+
+</html>
