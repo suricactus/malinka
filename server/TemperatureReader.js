@@ -5,6 +5,7 @@ const { getSensorTemperature } = require('./hw');
 
 // const DEVICES_DIR = '/sys/bus/w1/devices/';
 const DEVICES_DIR = '../';
+// const DEVICES_DIR = '../';
 
 class TemperatureReader extends EventEmitter {
   isBoilerOn = false;
@@ -37,9 +38,9 @@ class TemperatureReader extends EventEmitter {
     try {
       const config = this.config;
       const [innerT, outerT, waterT] = await Promise.all([
-        getSensorTemperature(path.join(DEVICES_DIR, config.innerTSensorId)),
-        getSensorTemperature(path.join(DEVICES_DIR, config.outerTSensorId)),
-        getSensorTemperature(path.join(DEVICES_DIR, config.waterSensorId)),
+        getSensorTemperature(path.join(DEVICES_DIR, config.innerTSensorId, 'w1_slave')),
+        getSensorTemperature(path.join(DEVICES_DIR, config.outerTSensorId, 'w1_slave')),
+        getSensorTemperature(path.join(DEVICES_DIR, config.waterSensorId, 'w1_slave')),
       ]);
       const expectedT = this._calcExpectedTemperature({ innerT, outerT, waterT });
       const shouldStartBoiling = this._calcShouldStartBoiling({ innerT, outerT, waterT, expectedT });

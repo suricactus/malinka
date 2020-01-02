@@ -13,7 +13,7 @@ const TemperatureReader = require('./TemperatureReader');
 const CONFIG_FILE = './config.json';
 const CSV_FILENAME = './records.csv';
 const CSV_HEADERS = ['timestamp', 'inner_t', 'outer_t', 'water_t', 'expected_t', 'is_boiler_on'];
-const SERVER_PORT = 8000;
+const SERVER_PORT = 7300;
 
 const app = new Koa();
 const websocketMiddleware = websocket();
@@ -51,9 +51,9 @@ const loadConfig = async () => {
   const defaults = {
     referenceInnerT: 20,
     toleranceDownT: 3,
-    outerTSensorId: 'example.output',
-    innerTSensorId: 'example.output',
-    waterSensorId: 'example.output',
+    outerTSensorId: '28-01144cd685aa',
+    innerTSensorId: '28-0303979405f1',
+    waterSensorId: '28-030c979423c2',
     readIntervalS: 1,
     lastRecordsToGetMeanInner: 60,
     lastRecordsToGetMeanOuter: 60,
