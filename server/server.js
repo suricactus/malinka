@@ -5,70 +5,55 @@ const csv = require('fast-csv');
 const Koa = require('koa');
 const static = require('koa-static');
 const websocket = require('koa-easy-ws');
+const mount = require('koa-mount');
 const Gpio = require('onoff').Gpio;
-const logger = require('pino')({ level: 'debug' });
 
+const { CONFIG_FILENAME } = require('./constants');
 const TemperatureReader = require('./TemperatureReader');
+const logger = require('./logger');
+const { fileExists, loadSettings } = require('./utils');
+const { getAllSensorsTemperature } = require('./hw');
+const api = require('./api');
 
-const CONFIG_FILE = './config.json';
 const CSV_FILENAME = './records.csv';
 const CSV_HEADERS = ['timestamp', 'inner_t', 'outer_t', 'water_t', 'expected_t', 'is_boiler_on'];
 const SERVER_PORT = 7300;
 
 const app = new Koa();
 const websocketMiddleware = websocket();
-const websocketServer = websocketMiddleware.server;
+const wss = websocketMiddleware.server;
 
 logger.trace('Setup server...');
+
+const methods = {
+  getAllSensorsTemperature,
+
+};
+
+logger.info('Current user is: ', require("os").userInfo().username);
 
 app.use(websocketMiddleware);
 app.use(async (ctx, next) => {
   if (!ctx.ws) return next();
   
   const ws = await ctx.ws();
-  
-  console.log(websocketServer)
 
-  return ws.send(JSON.stringify({
-    
-  }));
+  // this is a websocket request
 });
+app.use(mount('/api', api));
+
 app.use(static('./public'));
 
 app.listen(SERVER_PORT);
+
 logger.trace(`Server listening at port ${SERVER_PORT}`);
 
-
-const fileExists = (filename) => fs.promises.access(filename, fs.constants.F_OK)
-  .then(() => true)
-  .catch(() => false);
-
-const loadConfig = async () => {
-  if (await fileExists(CONFIG_FILE)) {
-    return JSON.parse(await fs.promises.readFile(CONFIG_FILE));
-  }
-
-  const defaults = {
-    referenceInnerT: 20,
-    toleranceDownT: 3,
-    outerTSensorId: '28-01144cd685aa',
-    innerTSensorId: '28-0303979405f1',
-    waterSensorId: '28-030c979423c2',
-    readIntervalS: 1,
-    lastRecordsToGetMeanInner: 60,
-    lastRecordsToGetMeanOuter: 60,
-    lastRecordsToGetMeanWater: 1,
-    calcExpectedTemperatureFormula: '-0.5 * outerT + 37 + (config.referenceInnerT - innerT) * 1.5',
-    minimumAllowedWaterT: 0,
-    maximumAllowedWaterT: 70,
-    criticalAlarmWaterT: 80,
-    controlBurnerOnOffPin: 17,
-  };
-
-  await fs.promises.writeFile(CONFIG_FILE, JSON.stringify(defaults));
-
-  return defaults;
-}
+const jsonrpcNotify = (channel, params) => ({
+  id: null,
+  jsonrpc: '2.0',
+  method: channel,
+  params,
+});
 
 const setGpioSensor = async (sensor, value) => {
   logger.trace('Sensor value changed', sensor, value);
@@ -80,17 +65,16 @@ const setGpioSensor = async (sensor, value) => {
   return sensor.write(value);
 };
 
-
 const start = async () => {
-  const config = await loadConfig();
-  const outControlBurner = Gpio.accessible ? new Gpio(config.controlBurnerOnOffPin, 'out') : null;
+  const settings = await loadSettings();
+  const outControlBurner = Gpio.accessible ? new Gpio(settings.controlBurnerOnOffPin, 'out') : null;
 
   // make sure the pin is turned off
   await setGpioSensor(outControlBurner, false);
 
-  fs.watch(CONFIG_FILE, async (eventType, filename) => {
+  fs.watch(CONFIG_FILENAME, async (eventType, filename) => {
     logger.info(`Config file changed: event "${eventType}" of file "${filename}"`)
-    Object.assign(config, await loadConfig());
+    Object.assign(settings, await loadSettings());
   });
   
   if (!await fileExists(CSV_FILENAME)) {
@@ -102,7 +86,7 @@ const start = async () => {
     csvStream.end();
   }
 
-  const temperatureReader = new TemperatureReader({ config });
+  const temperatureReader = new TemperatureReader({ config: settings });
   
   temperatureReader.startReading();
 
@@ -117,8 +101,8 @@ const start = async () => {
   });
 
   temperatureReader.on('data', (data) => {
-    websocketServer.clients.forEach(client => {
-      client.send(JSON.stringify(data));
+    wss.clients.forEach(client => {
+      client.send(JSON.stringify(jsonrpcNotify('new_measurement', data)));
     });
   });
 
@@ -132,9 +116,9 @@ const start = async () => {
     csvStream.pipe(csvFile);
     csvStream.write({
       timestamp: data.timestamp,
-      inner_t: data.innerT,
-      outer_t: data.outerT,
-      water_t: data.waterT,
+      inner_t: data.tokens.innerAvg,
+      outer_t: data.tokens.outerAvg,
+      water_t: data.tokens.waterAvg,
       expected_t: data.expectedT,
       is_boiler_on: Number(data.shouldStartBoiling),
     });

@@ -1,16 +1,16 @@
 const EventEmitter = require('events');
 const path = require('path');
 const math = require('mathjs');
-const { getSensorTemperature } = require('./hw');
 
-// const DEVICES_DIR = '/sys/bus/w1/devices/';
-const DEVICES_DIR = '../';
-// const DEVICES_DIR = '../';
+const { average } = require('./utils');
+const { getSensorTemperature, getSensorValue } = require('./hw');
+const { PURPOSE_INNER, PURPOSE_OUTER, PURPOSE_WATER, PURPOSE_NONE } = require('./constants');
 
 class TemperatureReader extends EventEmitter {
   isBoilerOn = false;
   config = null;
   _intervalId = null;
+  records = {};
 
   constructor({ config }) {
     super();
@@ -34,23 +34,66 @@ class TemperatureReader extends EventEmitter {
     }, this.config.readIntervalS * 1000);
   }
 
+  _sensorValuesToTokens({ sensorValues }) {
+    const sensorsByPurpose = { [PURPOSE_INNER]: [], [PURPOSE_OUTER]: [], [PURPOSE_WATER]: [] };
+    const purposes = [PURPOSE_INNER, PURPOSE_OUTER, PURPOSE_WATER, PURPOSE_NONE];
+    const limitByPurpose = {
+      [PURPOSE_INNER]: this.config.lastRecordsToGetMeanInner,
+      [PURPOSE_OUTER]: this.config.lastRecordsToGetMeanOuter,
+      [PURPOSE_WATER]: this.config.lastRecordsToGetMeanWater,
+    };
+
+    for (const { uid, value } of sensorValues) {
+      const { purpose } = this.config.sensors[uid];
+      
+      if (!purposes.includes(purpose)) {
+        throw new Error(`Unknowm sensor purpose: ${purpose}`);
+      }
+      
+      if (purpose === PURPOSE_NONE) continue;
+
+      this.records[uid] = this.records[uid] || [];
+      this.records[uid].push(value);
+      
+      if (this.records[uid].length > limitByPurpose[purpose]) {
+        this.records[uid].shift();
+      }
+      
+      sensorsByPurpose[purpose].push(average(this.records[uid]));
+    }
+    
+    const tokens = {};
+    
+    for (const [purpose, values] of Object.entries(sensorsByPurpose)) {
+      const purposeLower = purpose.toLowerCase();
+      
+      for (const [idx, value] of values.entries()) {
+        tokens[`${purposeLower}${idx + 1}`] = value;
+      }
+      
+      tokens[`${purposeLower}Avg`] = average(values);
+    }
+    
+    return tokens;
+  }
+
   async calcShouldStartBoiling() {
     try {
-      const config = this.config;
-      const [innerT, outerT, waterT] = await Promise.all([
-        getSensorTemperature(path.join(DEVICES_DIR, config.innerTSensorId, 'w1_slave')),
-        getSensorTemperature(path.join(DEVICES_DIR, config.outerTSensorId, 'w1_slave')),
-        getSensorTemperature(path.join(DEVICES_DIR, config.waterSensorId, 'w1_slave')),
-      ]);
-      const expectedT = this._calcExpectedTemperature({ innerT, outerT, waterT });
-      const shouldStartBoiling = this._calcShouldStartBoiling({ innerT, outerT, waterT, expectedT });
+      const settings = this.config;
+      const uids = Object.entries(settings.sensors)
+        .filter(([uid, purpose]) => purpose !== PURPOSE_NONE)
+        .map(([uid]) => uid);
+
+      const sensorValues = await Promise.all(uids.map(uid => getSensorValue(uid, true)));
+      const tokens = this._sensorValuesToTokens({ sensorValues });
+      const expectedT = this._calcExpectedTemperature({ tokens });
+      const shouldStartBoiling = this._calcShouldStartBoiling({ tokens, expectedT });
+
       this.isBoilerOn = shouldStartBoiling;
   
       this.emit('data', {
         timestamp: new Date().toISOString(),
-        innerT, 
-        outerT,
-        waterT,
+        tokens,
         expectedT,
         shouldStartBoiling,
       });
@@ -62,27 +105,25 @@ class TemperatureReader extends EventEmitter {
     }
   }
 
-  _calcExpectedTemperature({ innerT, outerT, waterT }) {
+  _calcExpectedTemperature({ tokens }) {
     const scope = {
-      innerT,
-      outerT,
-      waterT,
+      ...tokens,
       config: this.config,
     };
 
     return math.evaluate(this.config.calcExpectedTemperatureFormula, scope);
-    
-    // return 0.5 * outerT + 37 + (this.config.referenceInnerT - innerT) * 1.5;
   }
 
-  _calcShouldStartBoiling({ waterT, expectedT }) {
-    if (expectedT < this.config.minimumAllowedWaterT) return false;
+  _calcShouldStartBoiling({ tokens, expectedT }) {
+    const { waterAvg } = tokens;
+
+    if (expectedT < this.config.minimumAllowedWaterT) return true;
     if (expectedT > this.config.maximumAllowedWaterT) return false;
-
-    if (waterT < expectedT) {
+    
+    if (waterAvg < expectedT) {
       if (this.isBoilerOn) return true;
-
-      if (expectedT - waterT > this.config.toleranceDownT) {
+      
+      if (expectedT - waterAvg > this.config.toleranceDownT) {
         return true;
       }
 
