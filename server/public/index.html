@@ -2,743 +2,810 @@
 <html lang="en">
 
 <head>
-  <!--  d meta tags -->
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <!--  d meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 
-  <title>ТЕЦ "Осоговска 2"</title>
+    <title>ТЕЦ "Осоговска 2"</title>
 
-  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
-    integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.3/Chart.min.css">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.3/Chart.min.css">
 
-  <style>
-    .lbl {
-      width: 1rem;
-      height: 1rem;
-      display: inline-block;
-    }
-
-    .lbl-inner {
-      background-color: orange;
-    }
-
-    .lbl-outer {
-      background-color: red;
-    }
-
-    .lbl-water {
-      background-color: blue;
-    }
-  </style>
+    <style>
+        .lbl {
+            width: 1rem;
+            height: 1rem;
+            display: inline-block;
+        }
+        
+        .lbl-inner {
+            background-color: orange;
+        }
+        
+        .lbl-outer {
+            background-color: red;
+        }
+        
+        .lbl-water {
+            background-color: blue;
+        }
+    </style>
 </head>
 
 <body>
-  <nav class="navbar navbar-expand-lg navbar-light bg-light">
-    <a class="navbar-brand mb-0 h1" href="#">ТЕЦ "Осоговска 2"</a>
-  </nav>
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <a class="navbar-brand mb-0 h1" href="#">ТЕЦ "Осоговска 2"</a>
+    </nav>
 
-  <div class="container-fluid">
-    <div class="row">
-      <div class="col-sm-6">
-        <div class="card">
-          <div class="row">
-            <div class="col-sm-4">
-              <div class="card-body">
-                <div id="inner-t" class="card">
-                  <div class="card-body">Вътрешна t ℃ <span class="value"></span></div>
-                </div>
-              </div>
-            </div>
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-sm-6">
+                <div class="card">
+                    <div class="row">
+                        <div class="col-sm-4">
+                            <div class="card-body">
+                                <div id="is-boiler-on" class="card">
+                                    <div class="card-body">Подгряване <span class="value float-right"></span></div>
+                                </div>
+                            </div>
+                        </div>
 
-            <div class="col-sm-4">
-              <div class="card-body">
-                <div id="outer-t" class="card">
-                  <div class="card-body">Външна t ℃ <span class="value"></span></div>
-                </div>
-              </div>
-            </div>
+                        <div class="col-sm-4">
+                            <div class="card-body">
+                                <div id="inner-t" class="card">
+                                    <div class="card-body">Вътрешна t ℃ <span class="value float-right"></span></div>
+                                </div>
+                            </div>
+                        </div>
 
-            <div class="col-sm-4">
-              <div class="card-body">
-                <div id="expected-t" class="card">
-                  <div class="card-body">Изчислена t ℃ <span class="value"></span></div>
-                </div>
-              </div>
-            </div>
-            <div class="col-sm-4">
-              <div class="card-body">
-                <div id="water-t" class="card">
-                  <div class="card-body">Вода t ℃ <span class="value"></span></div>
-                </div>
-              </div>
-            </div><div class="col-sm-4">
-              <div class="card-body">
-                <div id="is-boiler-on" class="card">
-                  <div class="card-body">Подгряване <span class="value"></span></div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+                        <div class="col-sm-4">
+                            <div class="card-body">
+                                <div id="outer-t" class="card">
+                                    <div class="card-body">Външна t ℃ <span class="value float-right"></span></div>
+                                </div>
+                            </div>
+                        </div>
 
-      <div class="col-sm-6">
-        <div id="chart">
-          <canvas id="chart-canvas"></canvas>
-        </div>
-      </div>
-
-      <div class="col-sm-6">
-        <div class="p-2">
-          <button id="settings-toggle-btn" class="btn btn-primary btn-block">Настройки</button>
-        </div>
-        <div id="settings-loading" class="alert alert-info" hidden>Зареждане...</div>
-        <div id="settings-errors" class="alert alert-danger" hidden></div>
-        <form id="settings-form" hidden>
-          <div class="form-row">
-            <div class="form-group col-md-12">
-              <label for="settings-toleranceDownT">Долен хистерезис t на водата, в ℃</label>
-              <div class="input-group mb-2 mr-sm-2">
-                <input type="number" class="form-control" id="settings-toleranceDownT" name="toleranceDownT" min="0" max="10" step="0.1">
-                <div class="input-group-append">
-                  <div class="input-group-text">℃</div>
-                </div>
-              </div>
-              <small class="form-text text-muted">Толеранс за охлаждане на t на водата под оптималната, преди парното да започне да подгрява отново.</small>
-            </div>
-            <div class="form-group col-md-12">
-              <label for="settings-readIntervalS">Период на отчитане на датчиците, в секунди</label>
-              <div class="input-group mb-2 mr-sm-2">
-                <input type="number" class="form-control" id="settings-readIntervalS" name="readIntervalS" min="1" maximum="60" step="0.1">
-                <div class="input-group-append">
-                  <div class="input-group-text">секунди</div>
-                </div>
-              </div>
-              <small class="form-text text-muted">Периодът през който ще се отчитат датчиците и ще се преизчислява дали да започне подгряване или не. Свръх ниски стойности (под 1 секунда) могат да доведат до забавяния на системата.</small>
-            </div>
-            <div class="form-group col-md-12">
-              <label for="settings-controlBurnerOnOffPin">Номер на изходен крак за горелката</label>
-              <input type="number" class="form-control" id="settings-controlBurnerOnOffPin" name="controlBurnerOnOffPin" min="1"
-                max="40" step="1">
-              <small class="form-text text-muted">Изходен крак на платката, на който се подава флаг за контрол на горелката, като
-                наличието на сигнал се приема за включено.</small>
-            </div>
-            <div class="form-group col-md-12">
-              <label for="settings-controlPumpOnOffPin">Номер на изходен крак за помпата</label>
-              <input type="number" class="form-control" id="settings-controlPumpOnOffPin" name="controlPumpOnOffPin" min="1" max="40" step="1">
-              <small class="form-text text-muted">Изходен крак на платката, на който се подава флаг за контрол на помпата, като наличието на сигнал се приема за включено.</small>
-            </div>
-            <div class="form-group col-md-12">
-              <label for="settings-alarmBurnerInPin">Номер на входен крак за аларма</label>
-              <input type="number" class="form-control" id="settings-alarmBurnerInPin" name="alarmBurnerInPin" min="1"
-                max="40" step="1">
-              <small class="form-text text-muted">Входен крак на платката, на който се подава флаг за аларма на горелката, като
-                наличието на сигнал се приема за наличие на аларма и ще изпрати предупреждение за проблем.</small>
-            </div>
-            <div class="form-group col-md-12">
-              <label for="settings-minOuterToStartBoilingT">Минимална външна t за започване на подгряване, в ℃</label>
-              <div class="input-group mb-2 mr-sm-2">
-                <input type="number" class="form-control" id="settings-minOuterToStartBoilingT" name="minOuterToStartBoilingT"
-                  min="0" max="90" step="1">
-                <div class="input-group-append">
-                  <div class="input-group-text">℃</div>
-                </div>
-              </div>
-              <small class="form-text text-muted">Минимална външна t, под която котелът винаги ще седи изключен.</small>
-            </div>
-            <div class="form-group col-md-12">
-              <label for="settings-minimumAllowedWaterT">Минимална разрешена t на водата, в ℃</label>
-              <div class="input-group mb-2 mr-sm-2">
-                <input type="number" class="form-control" id="settings-minimumAllowedWaterT" name="minimumAllowedWaterT" min="0" max="90" step="1">
-                <div class="input-group-append">
-                  <div class="input-group-text">℃</div>
-                </div>
-              </div>
-              <small class="form-text text-muted">Минимална разрешена t на водата, под която котелът винаги ще седи включен. Защита против замръзване.</small>
-            </div>
-            <div class="form-group col-md-12">
-              <label for="settings-maximumAllowedWaterT">Максимална разрешена t на водата, в ℃</label>
-              <div class="input-group mb-2 mr-sm-2">
-                <input type="number" class="form-control" id="settings-maximumAllowedWaterT" name="maximumAllowedWaterT" min="1" max="90" step="1">
-                <div class="input-group-append">
-                  <div class="input-group-text">℃</div>
-                </div>
-              </div>
-              <small class="form-text text-muted">Максимална разрешена t на водата, над която котелът винаги ще седи изключен. Защита против прегряване.</small>
-            </div>
-            <div class="form-group col-md-12">
-              <label for="settings-criticalAlarmWaterT">Критична t, в ℃</label>
-              <div class="input-group mb-2 mr-sm-2">
-                <input type="number" class="form-control" id="settings-criticalAlarmWaterT" name="criticalAlarmWaterT" min="1" max="90" step="1">
-                <div class="input-group-append">
-                  <div class="input-group-text">℃</div>
-                </div>
-              </div>
-              <small class="form-text text-muted">Максимална критична t на водата, над която котелът винаги ще седи изключен и ще изпрати предупреждение за проблем.</small>
-            </div>
-            <div class="form-group col-md-4">
-              <label for="settings-lastRecordsToGetMeanInner">Брой измервания за осредняване на вътрешните датчици</label>
-              <div class="input-group mb-2 mr-sm-2">
-                <input type="number" class="form-control" id="settings-lastRecordsToGetMeanInner" name="lastRecordsToGetMeanInner" min="1" max="1000" step="1">
-                <div class="input-group-append">
-                  <div class="input-group-text">броя</div>
-                </div>
-              </div>
-              <small class="form-text text-muted">Стойността на тази настройка е броят на последните записи, които да се използват
-                за осредняване на стойността на вътрешния датчик. Броят замервания, умножен по периода на отчитане, дава общия
-                период за време в секунди, за който са осреднени стойностите.</small>
-            </div>
-            <div class="form-group col-md-4">
-              <label for="settings-lastRecordsToGetMeanOuter">Брой измервания за осредняване на външните датчици</label>
-              <div class="input-group mb-2 mr-sm-2">
-                <input type="number" class="form-control" id="settings-lastRecordsToGetMeanOuter" name="lastRecordsToGetMeanOuter" min="1" max="1000" step="1">
-                <div class="input-group-append">
-                  <div class="input-group-text">броя</div>
-                </div>
-              </div>
-              <small class="form-text text-muted">Стойността на тази настройка е броят на последните записи, които да се използват
-                за осредняване на стойността на външния датчик. Броят замервания, умножен по периода на отчитане, дава общия
-                период за време в секунди, за който са осреднени стойностите.</small>
-            </div>
-            <div class="form-group col-md-4">
-              <label for="settings-lastRecordsToGetMeanWater">Брой измервания за осредняване на водните датчици</label>
-              <div class="input-group mb-2 mr-sm-2">
-                <input type="number" class="form-control" id="settings-lastRecordsToGetMeanWater" name="lastRecordsToGetMeanWater" min="1" max="1000" step="1">
-                <div class="input-group-append">
-                  <div class="input-group-text">броя</div>
-                </div>
-              </div>
-              <small class="form-text text-muted">Стойността на тази настройка е броят на последните записи, които да се използват
-                за осредняване на стойността на котелния датчик. Броят замервания, умножен по периода на отчитане, дава общия
-                период за време в секунди, за който са осреднени стойностите.</small>
-            </div>
-          </div>
-          <div class="form-group">
-            <label for="settings-calcExpectedTemperatureFormula">Формула за изчисление на желаната t на котела</label>
-            <textarea class="form-control" id="settings-calcExpectedTemperatureFormula" name="calcExpectedTemperatureFormula" rows="3"></textarea>
-          </div>
-          <div class="">
-            <button id="settings-reset-btn" class="btn btn-warning" type="button">Фабрични настройки</button>
-            <button id="settings-save-btn" class="btn btn-primary" type="submit">Запиши</button>
-            <button id="settings-cancel-btn" class="btn btn-danger" type="button">Откажи</button>
-          </div>
-        </form>
-      </div>
-      
-      <div class="col-sm-6">
-        <div class="p-2">
-          <button id="setup-sensors-btn" class="btn btn-primary btn-block">Настройка на датчици</button>
-        </div>
-        <form id="setup-sensors-form" class="d-none">
-          <div id="setup-sensors-loading" class="alert alert-info">Зареждане...</div>
-          <div id="setup-sensors-errors" class="alert alert-danger" hidden></div>
-          <div id="sensors-list" hidden>
-            <div class="d-none d-sm-block">
-              <div class="form-row">
-                <div class="form-group col-md-3">
-                  <label>Сензор</label>
-                </div>
-                <div class="form-group col-md-3">
-                  <label>Предназначение</label>
-                </div>
-                <div class="form-group col-md-3">
-                  <label>Измерена t ℃</label>
-                </div>
-                <div class="form-group col-md-3">
-                  <label>Корекция t ℃</label>
-                </div>
-              </div>
-            </div>
-            <template id="sensor-settings-tmpl">
-              <div class="form-row sensor-row">
-                <div class="form-group col-md-3">
-                  <label class="d-block d-sm-none" for="sensor-uid">Сензор</label>
-                  <input type="text" class="form-control" id="sensor-uid" readonly="readonly">
-                </div>
-                <div class="form-group col-md-3">
-                  <label class="d-block d-sm-none" for="sensor-uid">Предназначение</label>
-                  <select id="sensor-purpose" class="form-control" name="purpose">
-                    <option value="ignore" selected="selected">Игнориран</option>
-                    <option value="inner">Вътрешен</option>
-                    <option value="outer">Външен</option>
-                    <option value="water">Воден</option>
-                  </select>
-                </div>
-                <div class="form-group col-md-3">
-                  <label class="d-block d-sm-none" for="sensor-value">Температура</label>
-                  <div class="input-group mb-2 mr-sm-2">
-                    <input type="text" class="form-control" id="sensor-value" readonly="readonly">
-                    <div class="input-group-append">
-                      <div class="input-group-text">℃</div>
+                        <div class="col-sm-4">
+                            <div class="card-body">
+                                <div id="expected-t" class="card">
+                                    <div class="card-body">Изчислена t ℃ <span class="value float-right"></span></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-sm-4">
+                            <div class="card-body">
+                                <div id="water-t" class="card">
+                                    <div class="card-body">Вода t ℃ <span class="value float-right"></span></div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                  </div>
                 </div>
-                <div class="form-group col-md-3">
-                  <label class="d-block d-sm-none" for="sensor-offset">Отклонение</label>
-                  <div class="input-group mb-2 mr-sm-2">
-                    <input type="number" class="form-control" id="sensor-offset" min="-10" max="10" step="0.1">
-                    <div class="input-group-append">
-                      <div class="input-group-text">℃</div>
+            </div>
+            <div class="col-sm-6">
+                <div id="chart">
+                    <canvas id="chart-canvas"></canvas>
+                </div>
+            </div>
+            <div class="col-sm-6">
+                <div class="p-2">
+                    <button id="settings-toggle-btn" class="btn btn-primary btn-block">Настройки</button>
+                </div>
+                <div id="settings-loading" class="alert alert-info" hidden>Зареждане...</div>
+                <div id="settings-errors" class="alert alert-danger" hidden></div>
+                <form id="settings-form" hidden>
+                    <div class="form-row">
+                        <div class="form-group col-md-12">
+                            <label for="settings-referenceInnerT">Желана вътрешна t, в ℃</label>
+                            <div class="input-group mb-2 mr-sm-2">
+                                <input type="number" class="form-control" id="settings-referenceInnerT" name="referenceInnerT" min="5" max="30" step="0.1">
+                                <div class="input-group-append">
+                                    <div class="input-group-text">℃</div>
+                                </div>
+                            </div>
+                            <small class="form-text text-muted">Желана температура за достигане и поддържане в помещенията. Налична е във формулата за изчисление като "config.referenceInnerT".</small>
+                        </div>
+
+                        <div class="form-group col-md-12">
+                            <label for="settings-toleranceDownT">Долен хистерезис t на водата, в ℃</label>
+                            <div class="input-group mb-2 mr-sm-2">
+                                <input type="number" class="form-control" id="settings-toleranceDownT" name="toleranceDownT" min="0" max="10" step="0.1">
+                                <div class="input-group-append">
+                                    <div class="input-group-text">℃</div>
+                                </div>
+                            </div>
+                            <small class="form-text text-muted">Толеранс за охлаждане на t на водата под оптималната, преди парното да започне да подгрява отново.</small>
+                        </div>
+
+                        <div class="form-group col-md-12">
+                            <label for="settings-readIntervalS">Период на отчитане на датчиците, в секунди</label>
+                            <div class="input-group mb-2 mr-sm-2">
+                                <input type="number" class="form-control" id="settings-readIntervalS" name="readIntervalS" min="1" max="60" step="0.1">
+                                <div class="input-group-append">
+                                    <div class="input-group-text">секунди</div>
+                                </div>
+                            </div>
+                            <small class="form-text text-muted">Периодът през който ще се отчитат датчиците и ще се преизчислява дали да започне подгряване или не. Свръх ниски стойности (под 1 секунда) могат да доведат до забавяния на системата.</small>
+                        </div>
+                        <div class="form-group col-md-12">
+                            <label for="settings-controlBurnerOnOffPin">Номер на изходен крак за горелката</label>
+                            <input type="number" class="form-control" id="settings-controlBurnerOnOffPin" name="controlBurnerOnOffPin" min="1" max="40" step="1">
+                            <small class="form-text text-muted">Изходен крак на платката, на който се подава флаг за контрол на горелката, като
+                    наличието на сигнал се приема за включено.</small>
+                        </div>
+                        <div class="form-group col-md-12">
+                            <label for="settings-controlPumpOnOffPin">Номер на изходен крак за помпата</label>
+                            <input type="number" class="form-control" id="settings-controlPumpOnOffPin" name="controlPumpOnOffPin" min="1" max="40" step="1">
+                            <small class="form-text text-muted">Изходен крак на платката, на който се подава флаг за контрол на помпата, като наличието на сигнал се приема за включено.</small>
+                        </div>
+                        <div class="form-group col-md-12">
+                            <label for="settings-alarmBurnerInPin">Номер на входен крак за аларма</label>
+                            <input type="number" class="form-control" id="settings-alarmBurnerInPin" name="alarmBurnerInPin" min="1" max="40" step="1">
+                            <small class="form-text text-muted">Входен крак на платката, на който се подава флаг за аларма на горелката, като
+                    наличието на сигнал се приема за наличие на аларма и ще изпрати предупреждение за проблем.</small>
+                        </div>
+                        <div class="form-group col-md-12">
+                            <label for="settings-minOuterToStartBoilingT">Минимална външна t за започване на подгряване, в ℃</label>
+                            <div class="input-group mb-2 mr-sm-2">
+                                <input type="number" class="form-control" id="settings-minOuterToStartBoilingT" name="minOuterToStartBoilingT" min="0" max="90" step="1">
+                                <div class="input-group-append">
+                                    <div class="input-group-text">℃</div>
+                                </div>
+                            </div>
+                            <small class="form-text text-muted">Минимална външна t, под която котелът винаги ще седи изключен.</small>
+                        </div>
+                        <div class="form-group col-md-12">
+                            <label for="settings-minimumAllowedWaterT">Минимална разрешена t на водата, в ℃</label>
+                            <div class="input-group mb-2 mr-sm-2">
+                                <input type="number" class="form-control" id="settings-minimumAllowedWaterT" name="minimumAllowedWaterT" min="0" max="90" step="1">
+                                <div class="input-group-append">
+                                    <div class="input-group-text">℃</div>
+                                </div>
+                            </div>
+                            <small class="form-text text-muted">Минимална разрешена t на водата, под която котелът винаги ще седи включен. Защита против замръзване.</small>
+                        </div>
+                        <div class="form-group col-md-12">
+                            <label for="settings-maximumAllowedWaterT">Максимална разрешена t на водата, в ℃</label>
+                            <div class="input-group mb-2 mr-sm-2">
+                                <input type="number" class="form-control" id="settings-maximumAllowedWaterT" name="maximumAllowedWaterT" min="1" max="90" step="1">
+                                <div class="input-group-append">
+                                    <div class="input-group-text">℃</div>
+                                </div>
+                            </div>
+                            <small class="form-text text-muted">Максимална разрешена t на водата, над която котелът винаги ще седи изключен. Защита против прегряване.</small>
+                        </div>
+                        <div class="form-group col-md-12">
+                            <label for="settings-criticalAlarmWaterT">Критична t, в ℃</label>
+                            <div class="input-group mb-2 mr-sm-2">
+                                <input type="number" class="form-control" id="settings-criticalAlarmWaterT" name="criticalAlarmWaterT" min="1" max="90" step="1">
+                                <div class="input-group-append">
+                                    <div class="input-group-text">℃</div>
+                                </div>
+                            </div>
+                            <small class="form-text text-muted">Максимална критична t на водата, над която котелът винаги ще седи изключен и ще изпрати предупреждение за проблем.</small>
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label for="settings-lastRecordsToGetMeanInner">Брой измервания за осредняване на вътрешните датчици</label>
+                            <div class="input-group mb-2 mr-sm-2">
+                                <input type="number" class="form-control" id="settings-lastRecordsToGetMeanInner" name="lastRecordsToGetMeanInner" min="1" max="1000" step="1">
+                                <div class="input-group-append">
+                                    <div class="input-group-text">броя</div>
+                                </div>
+                            </div>
+                            <small class="form-text text-muted">Стойността на тази настройка е броят на последните записи, които да се използват
+                    за осредняване на стойността на вътрешния датчик. Броят замервания, умножен по периода на отчитане, дава общия
+                    период за време в секунди, за който са осреднени стойностите.</small>
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label for="settings-lastRecordsToGetMeanOuter">Брой измервания за осредняване на външните датчици</label>
+                            <div class="input-group mb-2 mr-sm-2">
+                                <input type="number" class="form-control" id="settings-lastRecordsToGetMeanOuter" name="lastRecordsToGetMeanOuter" min="1" max="1000" step="1">
+                                <div class="input-group-append">
+                                    <div class="input-group-text">броя</div>
+                                </div>
+                            </div>
+                            <small class="form-text text-muted">Стойността на тази настройка е броят на последните записи, които да се използват
+                    за осредняване на стойността на външния датчик. Броят замервания, умножен по периода на отчитане, дава общия
+                    период за време в секунди, за който са осреднени стойностите.</small>
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label for="settings-lastRecordsToGetMeanWater">Брой измервания за осредняване на водните датчици</label>
+                            <div class="input-group mb-2 mr-sm-2">
+                                <input type="number" class="form-control" id="settings-lastRecordsToGetMeanWater" name="lastRecordsToGetMeanWater" min="1" max="1000" step="1">
+                                <div class="input-group-append">
+                                    <div class="input-group-text">броя</div>
+                                </div>
+                            </div>
+                            <small class="form-text text-muted">Стойността на тази настройка е броят на последните записи, които да се използват
+                    за осредняване на стойността на котелния датчик. Броят замервания, умножен по периода на отчитане, дава общия
+                    период за време в секунди, за който са осреднени стойностите.</small>
+                        </div>
                     </div>
-                  </div>
+                    <div class="form-group">
+                        <label for="settings-calcExpectedTemperatureFormula">Формула за изчисление на желаната t на котела</label>
+                        <textarea class="form-control" id="settings-calcExpectedTemperatureFormula" name="calcExpectedTemperatureFormula" rows="3"></textarea>
+                        <small class="form-text text-muted">Налични променливи: "innerAvg", "outerAvg", "waterAvg", "config.referenceInnerT"</small>
+                    </div>
+                    <div class="">
+                        <button id="settings-reset-btn" class="btn btn-warning" type="button">Фабрични настройки</button>
+                        <button id="settings-save-btn" class="btn btn-primary" type="submit">Запиши</button>
+                        <button id="settings-cancel-btn" class="btn btn-danger" type="button">Откажи</button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="col-sm-6">
+                <div class="p-2">
+                    <button id="setup-sensors-btn" class="btn btn-primary btn-block">Настройка на датчици</button>
                 </div>
-              </div>
-            </template>
-          </div>
-          <div>
-            <button id="setup-sensors-save-btn" class="btn btn-primary" type="submit" disabled="disabled">Запиши</button>
-            <button id="setup-sensors-cancel-btn" class="btn btn-danger" type="button">Откажи</button>
-          </div>
-        </form>
-      </div>
-  </div>
+                <form id="setup-sensors-form" class="d-none">
+                    <div id="setup-sensors-loading" class="alert alert-info">Зареждане...</div>
+                    <div id="setup-sensors-errors" class="alert alert-danger" hidden></div>
+                    <div id="sensors-list" hidden>
+                        <div class="d-none d-sm-block">
+                            <div class="form-row">
+                                <div class="form-group col-md-3">
+                                    <label>Сензор</label>
+                                </div>
+                                <div class="form-group col-md-3">
+                                    <label>Предназначение</label>
+                                </div>
+                                <div class="form-group col-md-3">
+                                    <label>Измерена t ℃</label>
+                                </div>
+                                <div class="form-group col-md-3">
+                                    <label>Корекция t ℃</label>
+                                </div>
+                            </div>
+                        </div>
+                        <template id="sensor-settings-tmpl">
+                            <div class="form-row sensor-row">
+                                <div class="form-group col-md-3">
+                                    <label class="d-block d-sm-none" for="sensor-uid">Сензор</label>
+                                    <input type="text" class="form-control" id="sensor-uid" readonly="readonly">
+                                </div>
+                                <div class="form-group col-md-3">
+                                    <label class="d-block d-sm-none" for="sensor-uid">Предназначение</label>
+                                    <select id="sensor-purpose" class="form-control" name="purpose">
+                                        <option value="ignore" selected="selected">Игнориран</option>
+                                        <option value="inner">Вътрешен</option>
+                                        <option value="outer">Външен</option>
+                                        <option value="water">Воден</option>
+                                    </select>
+                                </div>
+                                <div class="form-group col-md-3">
+                                    <label class="d-block d-sm-none" for="sensor-value">Температура</label>
+                                    <div class="input-group mb-2 mr-sm-2">
+                                        <input type="text" class="form-control" id="sensor-value" readonly="readonly">
+                                        <div class="input-group-append">
+                                            <div class="input-group-text">℃</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="form-group col-md-3">
+                                    <label class="d-block d-sm-none" for="sensor-offset">Отклонение</label>
+                                    <div class="input-group mb-2 mr-sm-2">
+                                        <input type="number" class="form-control" id="sensor-offset" min="-10" max="10" step="0.1">
+                                        <div class="input-group-append">
+                                            <div class="input-group-text">℃</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                    <div>
+                        <button id="setup-sensors-save-btn" class="btn btn-primary" type="submit" disabled="disabled">Запиши</button>
+                        <button id="setup-sensors-cancel-btn" class="btn btn-danger" type="button">Откажи</button>
+                    </div>
+                </form>
+            </div>
+            <div class="p-4">
+            </div>
+        </div>
+    </div>
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.3/Chart.bundle.js"></script>
-  <script>
-    const _n = (number, maximumFractionDigits = 3) => {
-      const intl = new Intl.NumberFormat('bg-bg', { maximumFractionDigits });
-      
-      return intl.format(number);
-    };
-
-    const assert = (condition, code, msg, params) => {
-      if (condition) return true;
-
-      const err = new Error(`[${code}] ${msg}`);
-
-      err.code = code;
-      err.msg = msg;
-      err.params = params;
-
-      throw err;
-    };
-    
-    class RpcServer {
-      _subscriptions = {};
-      methods = null;
-      socket = null;
-      timeout = null;
-      url = '';
-
-      constructor({ url, methods = {} }) {
-        assert(url !== undefined, '1000', 'RpcServer expected to receive web socket URL');
-
-        this.methods = {};
-        this.url = url;
-
-        this.init();
-      };
-
-      init() {
-        this.socket = new WebSocket(this.url);
-        this.socket.addEventListener('open', (event) => {
-          console.log('open', event);
-          clearTimeout(this.timeout);
-        });
-        this.socket.addEventListener('error', (event) => {
-          if (this.socket !== event.target) return;
-
-          console.log('error', event);
-          try {
-            this.init();
-          } catch (error) {
-            console.error(error);
-
-            this.timeout = setTimeout(() => this.init(), 2000);
-          }
-        });
-        
-        this.socket.addEventListener('message', async (event) => {
-          const { method: channel, params } = JSON.parse(event.data);
-          
-          clearTimeout(this.timeout);
-          this.timeout = setTimeout(() => this.init(), 10000);
-
-          if (this._subscriptions[channel]) {
-            for (const cb of this._subscriptions[channel]) {
-              try {
-                cb({ channel, data: params });
-              } catch (error) {
-                console.error('Error occured while calling ', channel, error);
-              }
-            }
-          } else {
-            console.warn('Nobody listens to this notification:', payload.params);
-          }
-        });
-      }
-
-      async on(channel, cb) {
-        assert(typeof channel === 'string', '1100', 'Missing channel name');
-        assert(typeof cb === 'function', '1101', 'Missing callback');
-        
-        this._subscriptions[channel] = this._subscriptions[channel] || [];
-        this._subscriptions[channel].push(cb);
-      }
-      
-      async off(channel, cb) {
-        assert(typeof channel === 'string', '1102', 'Missing channel name');
-        
-        this._subscriptions[channel] = this._subscriptions[channel] || [];
-        
-        if (cb) {
-          throw new Error('Not implemented yet!');
-        } else {
-          this._subscriptions[channel] = [];
-        }
-      }
-
-      async _handleResponse(resp) {
-        if (resp.status === 200) {
-          return await resp.json();
-        } else {
-          throw new Error(resp.statusText);
-        }
-      }
-
-      async get(url) {
-        return fetch(window.location.href + url.replace(/^\/+/, ''))
-          .then(this._handleResponse);
-      }
-
-      post(url, data = {}) {
-        return fetch(window.location.href + url.replace(/^\/+/, ''), {
-          method: 'POST',
-          body: JSON.stringify(data),
-          headers: {
-            'content-type': 'application/json',
-          },
-        })
-          .then(this._handleResponse);
-      }
-
-      patch(url, data = {}) {
-        return fetch(window.location.href + url.replace(/^\/+/, ''), {
-          method: 'PATCH',
-          body: JSON.stringify(data),
-          headers: {
-            'content-type': 'application/json',
-          },
-        })
-          .then(this._handleResponse);
-      }
-    };
-
-    const rpcServer = new RpcServer({ url: `ws://${new URL(window.location.href).host}` });
-
-    rpcServer.on('new_measurement', ({ data }) => {
-      eInnerValue.innerText = _n(data.tokens.innerAvg);
-      eOuterValue.innerText = _n(data.tokens.outerAvg);
-      eWaterValue.innerText = _n(data.tokens.waterAvg);
-      eExpectedValue.innerText = _n(data.expectedT);
-      eIsBoilerOn.innerText = data.shouldStartBoiling ? 'да' : 'не';
-      eIsBoilerOn.parentElement.parentElement.style.backgroundColor = data.shouldStartBoiling ? '#AAFFAA' : '#FFAAAA';
-
-      if (chart) {
-        chart.config.data.labels.push(new Date(data.timestamp));
-        chart.config.data.datasets[0].data.push(data.tokens.innerAvg);
-        chart.config.data.datasets[1].data.push(data.tokens.outerAvg);
-        chart.config.data.datasets[2].data.push(data.tokens.waterAvg);
-        chart.config.data.datasets[3].data.push(data.expectedT);
-        chart.update();
-      } else {
-        chart = drawChart({
-          labels: [data.timestamp],
-          innerT: [data.innerT],
-          outerT: [data.outerT],
-          waterT: [data.waterT],
-        });
-      }
-    });
-
-  const $sensorsList = document.querySelector('#sensors-list');
-  const $sensorsForm = document.querySelector('#setup-sensors-form');
-  const $sensorsFormErrors = document.querySelector('#setup-sensors-errors');
-  const $sensorsFormToggleBtn = document.querySelector('#setup-sensors-btn');
-  const $sensorsFormSaveBtn = document.querySelector('#setup-sensors-save-btn');
-  const $sensorsFormCancelBtn = document.querySelector('#setup-sensors-cancel-btn');
-  const $sensorsFormLoading = document.querySelector('#setup-sensors-loading');
-  let getSensorsTimeout = null;
-
-  $sensorsFormToggleBtn.addEventListener('click', () => {
-    $sensorsForm.classList.remove('d-none');
-    
-    $sensorsList.hidden = true;
-    $sensorsFormLoading.hidden = false;
-    $sensorsFormErrors.hidden = true;
-    $sensorsFormToggleBtn.disabled = true;
-    $sensorsFormSaveBtn.disabled = true;
-    
-    const getSensors = async () => {
-      if ($sensorsForm.classList.contains('d-none')) {
-        clearTimeout(getSensorsTimeout);
-        return;
-      };
-
-      try {
-        const sensors = await rpcServer.get('/api/sensors');
-        const $template = document.querySelector('#sensor-settings-tmpl');
-        
-        $sensorsFormSaveBtn.disabled = false;
-        $sensorsList.hidden = false;
-
-        for (const [sensorUid, { value, purpose, offsetT }] of Object.entries(sensors)) {
-          if (!document.querySelector(`#sensor-uid-${sensorUid}`)) {
-            const $clone = document.importNode($template.content, true);
-            const $purpose = $clone.querySelector('#sensor-purpose');
-            const $offset = $clone.querySelector('#sensor-offset');
-
-            $purpose.id = `sensor-purpose-${sensorUid}`;
-            $purpose.name = `purpose-${sensorUid}`;
-            $purpose.value = purpose.toLowerCase();
-            
-            $offset.id = `sensor-offset-${sensorUid}`;
-            $offset.value = offsetT;
-
-            $clone.querySelector('#sensor-uid').id = `sensor-uid-${sensorUid}`;
-            $clone.querySelector('#sensor-value').id = `sensor-value-${sensorUid}`;
-            $clone.querySelector('.sensor-row').dataset.uid = sensorUid;
-
-            $sensorsList.appendChild($clone);
-          }
-
-          const $sensorUid = document.querySelector(`#sensor-uid-${sensorUid}`);
-          const $sensorValue = document.querySelector(`#sensor-value-${sensorUid}`);
-
-          $sensorUid.value = sensorUid;
-          $sensorValue.value = value;
-        }
-
-        const uselessSensorRows = Array.from(document.querySelectorAll('.sensor-row'))
-          .filter($el => sensors[$el.dataset.uid]);
-
-      } catch (error) {
-        $sensorsFormErrors.hidden = false;
-        $sensorsFormErrors.innerHTML = error.toString() + '<br>' + error.stack;
-        console.error(error);
-      } finally {
-        $sensorsFormLoading.hidden = true;
-
-        getSensorsTimeout = setTimeout(getSensors, 1000);
-      }
-    };
-
-    getSensors();
-  });
-  
-  $sensorsFormCancelBtn.addEventListener('click', () => {
-    clearTimeout(getSensorsTimeout);
-
-    $sensorsForm.classList.add('d-none');
-    $sensorsFormToggleBtn.disabled = false;
-  });
-  
-  $sensorsForm.addEventListener('submit', async (event) => {
-    event.preventDefault();
-    
-    $sensorsFormLoading.hidden = false;
-    $sensorsFormErrors.hidden = true;
-    $sensorsFormToggleBtn.disabled = false;
-
-    try {
-      const sensors = {};
-      const data = new FormData($sensorsForm);
-      
-      for (const [name, value] of data.entries()) {
-        const uid = name.replace('purpose-', '');
-        const offsetT = Number(document.querySelector(`#sensor-offset-${uid}`).value);
-
-        sensors[uid] = {
-          purpose: value,
-          offsetT,
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.3/Chart.bundle.js"></script>
+    <script>
+        window.onerror = (...args) => {
+            alert(`ГРЕШКА: ${args.join('\n')}`);
         };
-      }
-      
-      await rpcServer.post('/api/sensors', sensors);
-      
-      $sensorsForm.classList.add('d-none');
-    } catch (error) {
-      $sensorsFormErrors.hidden = false;
-      $sensorsFormErrors.innerHTML = error.toString() + '<br>' + error.stack;
-      console.error(error);
-    } finally {
-      $sensorsFormLoading.hidden = true;
+    </script>
+    <script>
+        const DEFAULT_FRACTION_DIGITS = 2;
+        const _n = (number, {
+            maximumFractionDigits = DEFAULT_FRACTION_DIGITS,
+                minimumFractionDigits = DEFAULT_FRACTION_DIGITS
+        } = {}) => {
+            const intl = new Intl.NumberFormat('bg-bg', {
+                maximumFractionDigits, minimumFractionDigits
+            });
 
-    }
-  });
+            return intl.format(number);
+        };
 
-  
-  const $settingsForm = document.querySelector('#settings-form');
-  const $settingsLoading = document.querySelector('#settings-loading');
-  const $settingsErrors = document.querySelector('#settings-errors');
-  const $settingsToggleBtn = document.querySelector('#settings-toggle-btn');
-  const $settingsSaveBtn = document.querySelector('#settings-save-btn');
-  const $settingsCancelBtn = document.querySelector('#settings-cancel-btn');
+        const round = (number, {
+            maximumFractionDigits = DEFAULT_FRACTION_DIGITS,
+                minimumFractionDigits = DEFAULT_FRACTION_DIGITS
+        } = {}) => {
+            const intl = new Intl.NumberFormat('en-us', {
+                maximumFractionDigits, minimumFractionDigits
+            });
 
-  const closeSettings = () => {
-    $settingsForm.hidden = true;
-    $settingsToggleBtn.disabled = false;
-    $settingsLoading.hidden = true;
-    $settingsErrors.hidden = true;
-  };
-  const confirmProceedSettings = () => {
-    return window.confirm('Промяната на тези настройки може да доведе до нежелани дефекти. Сигурни ли сте, че искате да продължите?');
-  };
-  
-  $settingsToggleBtn.addEventListener('click', async () => {
-    if (!confirmProceedSettings()) return;
-    
-    $settingsLoading.hidden = false;
-    $settingsErrors.hidden = true;
-    $settingsToggleBtn.disabled = true;
-    
-    try {
-      const settings = await rpcServer.get('/api/settings');
-      
-      $settingsForm.hidden = false;
-      
-      const $inputs = $settingsForm.querySelectorAll('input, select, textarea');
+            return +intl.format(number);
+        };
 
-      for (const $input of Array.from($inputs)) {
-        $input.value = settings[$input.name];
-      }
-    } catch (error) {
-      $settingsErrors.hidden = false;
-      $settingsErrors.innerHTML = error + '<br>' + error.stack;
-    } finally {
-      $settingsLoading.hidden = true;
-    }
-  });
-  
-  $settingsForm.addEventListener('submit', async (event) => {
-    event.preventDefault();
-    
-    if (!confirmProceedSettings()) return;
+        const assert = (condition, code, msg, params) => {
+            if (condition) return true;
 
-    const $inputs = $settingsForm.querySelectorAll('input, select, textarea');
-    const data = {};
+            const err = new Error(`[${code}] ${msg}`);
 
-    for (const $input of Array.from($inputs)) {
-      data[$input.name] = $input.value; 
+            err.code = code;
+            err.msg = msg;
+            err.params = params;
 
-      if ($input.type === 'number') data[$input.name] = Number(data[$input.name]);
-    }
+            throw err;
+        };
 
-    $settingsLoading.hidden = false;
-    $settingsErrors.hidden = true;
-    $settingsToggleBtn.disabled = true;
-    
-    try {
-      await rpcServer.patch('/api/settings', data);
-      
-      closeSettings();
-    } catch (error) {
-      $settingsErrors.hidden = false;
-      $settingsErrors.innerHTML = error + '<br>' + error.stack;
-    } finally {
-      $settingsLoading.hidden = true;
-    }
-  });
-    // if (!confirm('Това ще занули и настройките на сензорите! Продължи?')) return;
-    
-  $settingsCancelBtn.addEventListener('click', () => {
-    if (!confirmProceedSettings()) return;
+        class RpcServer {
+            // _subscriptions = {};
+            // methods = null;
+            // socket = null;
+            // timeout = null;
+            // url = '';
 
-    closeSettings();
-  });
-  
-  
-  // Connection opened
-  let chart = null;
+            constructor({
+                url, methods = {}
+            }) {
+                assert(url !== undefined, '1000', 'RpcServer expected to receive web socket URL');
 
+                this._subscriptions = {};
+                this.socket = null;
+                this.timeout = null;
+                this.methods = {};
+                this.url = url;
 
-  const eInnerValue = document.querySelector('#inner-t .value');
-  const eOuterValue = document.querySelector('#outer-t .value');
-  const eWaterValue = document.querySelector('#water-t .value');
-  const eExpectedValue = document.querySelector('#expected-t .value');
-  const eIsBoilerOn = document.querySelector('#is-boiler-on .value');
+                this.init();
+            };
 
-  const drawChart = ({ timestamp = [], innerT = [], outerT = [], waterT = [], expectedT = [] }) => {
-    const config = {
-      type: 'line',
-      data: {
-        labels: timestamp,
-        datasets: [
-          {
-            label: 'Вътрешна t ℃',
-            backgroundColor: 'orange',
-            borderColor: 'orange',
-            fill: false,
-            data: innerT,
-          }, {
-            label: 'Външна t ℃',
-            backgroundColor: 'red',
-            borderColor: 'red',
-            fill: false,
-            data: outerT,
-          }, {
-            label: 'Вода t ℃',
-            backgroundColor: 'blue',
-            borderColor: 'blue',
-            fill: false,
-            data: waterT,
-          }, {
-            label: 'Изчислена t ℃',
-            backgroundColor: 'green',
-            borderColor: 'green',
-            fill: false,
-            data: expectedT,
-          },
-        ],
-      },
-      options: {
-        // maintainAspectRatio: false,
-        aspectRatio: 1,
-        responsive: true,
-        title: {
-          display: true,
-          text: 'Графика на t'
-        },
-        tooltips: {
-          mode: 'index',
-          intersect: false,
-        },
-        hover: {
-          mode: 'nearest',
-          intersect: true
-        },
-        scales: {
-          xAxes: [{
-            display: true,
-            type: 'time',
-            time: {
-              unit: 'minute',
-            },
-            scaleLabel: {
-              display: true,
-              labelString: 'Month'
+            init() {
+                this.socket = new WebSocket(this.url);
+                this.socket.addEventListener('open', (event) => {
+                    console.log('open', event);
+                    clearTimeout(this.timeout);
+                });
+                this.socket.addEventListener('error', (event) => {
+                    if (this.socket !== event.target) return;
+
+                    console.log('error', event);
+                    try {
+                        this.init();
+                    } catch (error) {
+                        console.error(error);
+
+                        this.timeout = setTimeout(() => this.init(), 2000);
+                    }
+                });
+
+                this.socket.addEventListener('message', async(event) => {
+                    const {
+                        method: channel,
+                        params
+                    } = JSON.parse(event.data);
+
+                    clearTimeout(this.timeout);
+                    this.timeout = setTimeout(() => this.init(), 10000);
+
+                    if (this._subscriptions[channel]) {
+                        for (const cb of this._subscriptions[channel]) {
+                            try {
+                                cb({
+                                    channel, data: params
+                                });
+                            } catch (error) {
+                                console.error('Error occured while calling ', channel, error);
+                            }
+                        }
+                    } else {
+                        console.warn('Nobody listens to this notification:', payload.params);
+                    }
+                });
             }
-          }],
-          yAxes: [{
-            display: true,
-            scaleLabel: {
-              display: true,
-              labelString: 'Value'
+
+            async on(channel, cb) {
+                assert(typeof channel === 'string', '1100', 'Missing channel name');
+                assert(typeof cb === 'function', '1101', 'Missing callback');
+
+                this._subscriptions[channel] = this._subscriptions[channel] || [];
+                this._subscriptions[channel].push(cb);
             }
-          }]
-        }
-      }
-    };
-    const ctx = document.querySelector('#chart-canvas').getContext('2d');
-    
-    return new Chart(ctx, config);
-  };
 
+            async off(channel, cb) {
+                assert(typeof channel === 'string', '1102', 'Missing channel name');
 
-    window.onload = function () {
-    };
-  </script>
+                this._subscriptions[channel] = this._subscriptions[channel] || [];
+
+                if (cb) {
+                    throw new Error('Not implemented yet!');
+                } else {
+                    this._subscriptions[channel] = [];
+                }
+            }
+
+            async _handleResponse(resp) {
+                if (resp.status === 200) {
+                    return await resp.json();
+                } else {
+                    throw new Error(resp.statusText);
+                }
+            }
+
+            async get(url) {
+                return fetch(window.location.href + url.replace(/^\/+/, ''))
+                    .then(this._handleResponse);
+            }
+
+            post(url, data = {}) {
+                return fetch(window.location.href + url.replace(/^\/+/, ''), {
+                        method: 'POST',
+                        body: JSON.stringify(data),
+                        headers: {
+                            'content-type': 'application/json',
+                        },
+                    })
+                    .then(this._handleResponse);
+            }
+
+            patch(url, data = {}) {
+                return fetch(window.location.href + url.replace(/^\/+/, ''), {
+                        method: 'PATCH',
+                        body: JSON.stringify(data),
+                        headers: {
+                            'content-type': 'application/json',
+                        },
+                    })
+                    .then(this._handleResponse);
+            }
+        };
+
+        const rpcServer = new RpcServer({
+            url: `ws://${new URL(window.location.href).host}`
+        });
+
+        rpcServer.on('new_measurement', ({
+            data
+        }) => {
+            eInnerValue.innerText = _n(data.tokens.innerAvg);
+            eOuterValue.innerText = _n(data.tokens.outerAvg);
+            eWaterValue.innerText = _n(data.tokens.waterAvg);
+            eExpectedValue.innerText = _n(data.expectedT);
+            eIsBoilerOn.innerText = data.shouldStartBoiling ? 'да' : 'не';
+            eIsBoilerOn.parentElement.parentElement.style.backgroundColor = data.shouldStartBoiling ? '#AAFFAA' : '#FFAAAA';
+
+            if (chart) {
+                chart.config.data.labels.push(new Date(data.timestamp));
+                chart.config.data.datasets[0].data.push(round(data.tokens.innerAvg));
+                chart.config.data.datasets[1].data.push(round(data.tokens.outerAvg));
+                chart.config.data.datasets[2].data.push(round(data.tokens.waterAvg));
+                chart.config.data.datasets[3].data.push(round(data.expectedT));
+                chart.update();
+            } else {
+                chart = drawChart({
+                    labels: [data.timestamp],
+                    innerT: [data.innerT],
+                    outerT: [data.outerT],
+                    waterT: [data.waterT],
+                });
+            }
+        });
+
+        const $sensorsList = document.querySelector('#sensors-list');
+        const $sensorsForm = document.querySelector('#setup-sensors-form');
+        const $sensorsFormErrors = document.querySelector('#setup-sensors-errors');
+        const $sensorsFormToggleBtn = document.querySelector('#setup-sensors-btn');
+        const $sensorsFormSaveBtn = document.querySelector('#setup-sensors-save-btn');
+        const $sensorsFormCancelBtn = document.querySelector('#setup-sensors-cancel-btn');
+        const $sensorsFormLoading = document.querySelector('#setup-sensors-loading');
+        let getSensorsTimeout = null;
+
+        $sensorsFormToggleBtn.addEventListener('click', () => {
+            $sensorsForm.classList.remove('d-none');
+
+            $sensorsList.hidden = true;
+            $sensorsFormLoading.hidden = false;
+            $sensorsFormErrors.hidden = true;
+            $sensorsFormToggleBtn.disabled = true;
+            $sensorsFormSaveBtn.disabled = true;
+
+            const getSensors = async() => {
+                if ($sensorsForm.classList.contains('d-none')) {
+                    clearTimeout(getSensorsTimeout);
+                    return;
+                };
+
+                try {
+                    const sensors = await rpcServer.get('/api/sensors');
+                    const $template = document.querySelector('#sensor-settings-tmpl');
+
+                    $sensorsFormSaveBtn.disabled = false;
+                    $sensorsList.hidden = false;
+
+                    for (const [sensorUid, {
+                            value, purpose, offsetT
+                        }] of Object.entries(sensors)) {
+                        if (!document.querySelector(`#sensor-uid-${sensorUid}`)) {
+                            const $clone = document.importNode($template.content, true);
+                            const $purpose = $clone.querySelector('#sensor-purpose');
+                            const $offset = $clone.querySelector('#sensor-offset');
+
+                            $purpose.id = `sensor-purpose-${sensorUid}`;
+                            $purpose.name = `purpose-${sensorUid}`;
+                            $purpose.value = purpose.toLowerCase();
+
+                            $offset.id = `sensor-offset-${sensorUid}`;
+                            $offset.value = offsetT;
+
+                            $clone.querySelector('#sensor-uid').id = `sensor-uid-${sensorUid}`;
+                            $clone.querySelector('#sensor-value').id = `sensor-value-${sensorUid}`;
+                            $clone.querySelector('.sensor-row').dataset.uid = sensorUid;
+
+                            $sensorsList.appendChild($clone);
+                        }
+
+                        const $sensorUid = document.querySelector(`#sensor-uid-${sensorUid}`);
+                        const $sensorValue = document.querySelector(`#sensor-value-${sensorUid}`);
+
+                        $sensorUid.value = sensorUid;
+                        $sensorValue.value = value;
+                    }
+
+                    const uselessSensorRows = Array.from(document.querySelectorAll('.sensor-row'))
+                        .filter($el => sensors[$el.dataset.uid]);
+
+                } catch (error) {
+                    $sensorsFormErrors.hidden = false;
+                    $sensorsFormErrors.innerHTML = error.toString() + '<br>' + error.stack;
+                    console.error(error);
+                } finally {
+                    $sensorsFormLoading.hidden = true;
+
+                    getSensorsTimeout = setTimeout(getSensors, 1000);
+                }
+            };
+
+            getSensors();
+        });
+
+        $sensorsFormCancelBtn.addEventListener('click', () => {
+            clearTimeout(getSensorsTimeout);
+
+            $sensorsForm.classList.add('d-none');
+            $sensorsFormToggleBtn.disabled = false;
+        });
+
+        $sensorsForm.addEventListener('submit', async(event) => {
+            event.preventDefault();
+
+            $sensorsFormLoading.hidden = false;
+            $sensorsFormErrors.hidden = true;
+            $sensorsFormToggleBtn.disabled = false;
+
+            try {
+                const sensors = {};
+                const data = new FormData($sensorsForm);
+
+                for (const [name, value] of data.entries()) {
+                    const uid = name.replace('purpose-', '');
+                    const offsetT = Number(document.querySelector(`#sensor-offset-${uid}`).value);
+
+                    sensors[uid] = {
+                        purpose: value,
+                        offsetT,
+                    };
+                }
+
+                await rpcServer.post('/api/sensors', sensors);
+
+                $sensorsForm.classList.add('d-none');
+            } catch (error) {
+                $sensorsFormErrors.hidden = false;
+                $sensorsFormErrors.innerHTML = error.toString() + '<br>' + error.stack;
+                console.error(error);
+            } finally {
+                $sensorsFormLoading.hidden = true;
+
+            }
+        });
+
+        const $settingsForm = document.querySelector('#settings-form');
+        const $settingsLoading = document.querySelector('#settings-loading');
+        const $settingsErrors = document.querySelector('#settings-errors');
+        const $settingsToggleBtn = document.querySelector('#settings-toggle-btn');
+        const $settingsSaveBtn = document.querySelector('#settings-save-btn');
+        const $settingsResetBtn = document.querySelector('#settings-reset-btn');
+        const $settingsCancelBtn = document.querySelector('#settings-cancel-btn');
+
+        const closeSettings = () => {
+            $settingsForm.hidden = true;
+            $settingsToggleBtn.disabled = false;
+            $settingsLoading.hidden = true;
+            $settingsErrors.hidden = true;
+        };
+        const confirmProceedSettings = () => {
+            return window.confirm('Промяната на тези настройки може да доведе до нежелани дефекти. Сигурни ли сте, че искате да продължите?');
+        };
+
+        $settingsResetBtn.addEventListener('click', async() => {
+            const isConfirmed = confirm('Сигурни ли сте, че желаете да върнете фабричните настройки? Всички досега настроени стойности, включително настройките на датчиците ще бъдат загубени и не могат да бъдат възстановени!');
+
+            if (!isConfirmed) return;
+
+            $settingsLoading.hidden = false;
+            $settingsErrors.hidden = true;
+            $settingsResetBtn.disabled = true;
+
+            try {
+                await rpcServer.post('/api/settings/reset');
+
+                closeSettings();
+            } catch (error) {
+                $settingsErrors.hidden = false;
+                $settingsErrors.innerHTML = error + '<br>' + error.stack;
+            } finally {
+                $settingsResetBtn.disabled = false;
+                $settingsLoading.hidden = true;
+            }
+        });
+
+        $settingsToggleBtn.addEventListener('click', async() => {
+            if (!confirmProceedSettings()) return;
+
+            $settingsLoading.hidden = false;
+            $settingsErrors.hidden = true;
+            $settingsToggleBtn.disabled = true;
+
+            try {
+                const settings = await rpcServer.get('/api/settings');
+
+                $settingsForm.hidden = false;
+
+                const $inputs = $settingsForm.querySelectorAll('input, select, textarea');
+
+                for (const $input of Array.from($inputs)) {
+                    $input.value = settings[$input.name];
+                }
+            } catch (error) {
+                $settingsErrors.hidden = false;
+                $settingsErrors.innerHTML = error + '<br>' + error.stack;
+            } finally {
+                $settingsLoading.hidden = true;
+            }
+        });
+
+        $settingsForm.addEventListener('submit', async(event) => {
+            event.preventDefault();
+
+            if (!confirmProceedSettings()) return;
+
+            const $inputs = $settingsForm.querySelectorAll('input, select, textarea');
+            const data = {};
+
+            for (const $input of Array.from($inputs)) {
+                data[$input.name] = $input.value;
+
+                if ($input.type === 'number') data[$input.name] = Number(data[$input.name]);
+            }
+
+            $settingsLoading.hidden = false;
+            $settingsErrors.hidden = true;
+            $settingsToggleBtn.disabled = true;
+
+            try {
+                await rpcServer.patch('/api/settings', data);
+
+                closeSettings();
+            } catch (error) {
+                $settingsErrors.hidden = false;
+                $settingsErrors.innerHTML = error + '<br>' + error.stack;
+            } finally {
+                $settingsLoading.hidden = true;
+            }
+        });
+
+        $settingsCancelBtn.addEventListener('click', () => {
+            if (!confirmProceedSettings()) return;
+
+            closeSettings();
+        });
+
+        // Connection opened
+        let chart = null;
+
+        const eInnerValue = document.querySelector('#inner-t .value');
+        const eOuterValue = document.querySelector('#outer-t .value');
+        const eWaterValue = document.querySelector('#water-t .value');
+        const eExpectedValue = document.querySelector('#expected-t .value');
+        const eIsBoilerOn = document.querySelector('#is-boiler-on .value');
+
+        const drawChart = ({
+            timestamp = [], innerT = [], outerT = [], waterT = [], expectedT = []
+        }) => {
+            const config = {
+                type: 'line',
+                data: {
+                    labels: timestamp,
+                    datasets: [{
+                        label: 'Вътрешна t ℃',
+                        backgroundColor: 'orange',
+                        borderColor: 'orange',
+                        fill: false,
+                        data: innerT,
+                    }, {
+                        label: 'Външна t ℃',
+                        backgroundColor: 'red',
+                        borderColor: 'red',
+                        fill: false,
+                        data: outerT,
+                    }, {
+                        label: 'Вода t ℃',
+                        backgroundColor: 'blue',
+                        borderColor: 'blue',
+                        fill: false,
+                        data: waterT,
+                    }, {
+                        label: 'Изчислена t ℃',
+                        backgroundColor: 'green',
+                        borderColor: 'green',
+                        fill: false,
+                        data: expectedT,
+                    }, ],
+                },
+                options: {
+                    // maintainAspectRatio: false,
+                    aspectRatio: 1,
+                    responsive: true,
+                    title: {
+                        display: true,
+                        text: 'Графика на t'
+                    },
+                    tooltips: {
+                        mode: 'index',
+                        intersect: false,
+                    },
+                    hover: {
+                        mode: 'nearest',
+                        intersect: true
+                    },
+                    scales: {
+                        xAxes: [{
+                            display: true,
+                            type: 'time',
+                            time: {
+                                unit: 'minute',
+                            },
+                            scaleLabel: {
+                                display: true,
+                                labelString: 'Month'
+                            }
+                        }],
+                        yAxes: [{
+                            display: true,
+                            scaleLabel: {
+                                display: true,
+                                labelString: 'Value'
+                            }
+                        }]
+                    }
+                }
+            };
+            const ctx = document.querySelector('#chart-canvas').getContext('2d');
+
+            return new Chart(ctx, config);
+        };
+
+        window.onload = () => {};
+    </script>
 
 </body>
 

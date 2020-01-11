@@ -2,6 +2,7 @@ const EventEmitter = require('events');
 const path = require('path');
 const math = require('mathjs');
 
+const logger = require('./logger');
 const { average } = require('./utils');
 const { getSensorTemperature, getSensorValue } = require('./hw');
 const { PURPOSE_INNER, PURPOSE_OUTER, PURPOSE_WATER, PURPOSE_NONE } = require('./constants');
@@ -27,11 +28,20 @@ class TemperatureReader extends EventEmitter {
   async startReading() {
     await this.calcShouldStartBoiling();
 
-    clearInterval = clearInterval(this._intervalId);
+    clearInterval(this._intervalId);
 
-    this._intervalId = setInterval(async () => {
+    const readIntervalS = this.config.readIntervalS;
+    const cb = async () => {
+      if (readIntervalS !== this.config.readIntervalS) {
+        clearInterval(this._intervalId);
+
+        this._intervalId = setInterval(cb, this.config.readIntervalS * 1000);
+      }
+
       await this.calcShouldStartBoiling();
-    }, this.config.readIntervalS * 1000);
+    };
+
+    this._intervalId = setInterval(cb, readIntervalS * 1000);
   }
 
   _sensorValuesToTokens({ sensorValues }) {
