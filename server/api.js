@@ -104,6 +104,7 @@ router.get('/records', async (ctx) => {
 
   stream.end();
 
+  ctx.response.set('Content-Disposition', `attachment; filename = "records_${new Date().toISOString()}.csv"`)
   ctx.body = stream;
 });
 
