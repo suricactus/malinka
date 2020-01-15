@@ -1,4 +1,5 @@
 const CONFIG_FILENAME = './config.json';
+const SQLITE_FILENAME = './records.db';
 const PURPOSE_INNER = 'INNER';
 const PURPOSE_OUTER = 'OUTER';
 const PURPOSE_WATER = 'WATER';
@@ -6,6 +7,7 @@ const PURPOSE_NONE = 'NONE';
 
 module.exports = {
   CONFIG_FILENAME,
+  SQLITE_FILENAME,
   PURPOSE_INNER,
   PURPOSE_OUTER,
   PURPOSE_WATER,

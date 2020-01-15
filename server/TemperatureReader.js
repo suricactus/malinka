@@ -125,10 +125,13 @@ class TemperatureReader extends EventEmitter {
   }
 
   _calcShouldStartBoiling({ tokens, expectedT }) {
-    const { waterAvg } = tokens;
+    const { outerAvg, waterAvg } = tokens;
 
-    if (expectedT < this.config.minimumAllowedWaterT) return true;
+    if (outerAvg > this.config.minOuterToStartBoilingT) return false;
     if (expectedT > this.config.maximumAllowedWaterT) return false;
+    if (waterAvg > this.config.maximumAllowedWaterT) return false;
+    if (expectedT < this.config.minimumAllowedWaterT) return true;
+    if (waterAvg < this.config.minimumAllowedWaterT) return true;
     
     if (waterAvg < expectedT) {
       if (this.isBoilerOn) return true;

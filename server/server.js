@@ -1,36 +1,32 @@
 const WebSocket = require('ws');
 const fs = require('fs');
 
-const csv = require('fast-csv');
 const Koa = require('koa');
 const static = require('koa-static');
 const websocket = require('koa-easy-ws');
 const mount = require('koa-mount');
 const Gpio = require('onoff').Gpio;
+const sqlite = require('sqlite');
 
-const { CONFIG_FILENAME } = require('./constants');
+const { CONFIG_FILENAME, SQLITE_FILENAME } = require('./constants');
 const TemperatureReader = require('./TemperatureReader');
 const logger = require('./logger');
 const { fileExists, loadSettings } = require('./utils');
 const { getAllSensorsTemperature } = require('./hw');
 const api = require('./api');
 
-const CSV_FILENAME = './records.csv';
-const CSV_HEADERS = ['timestamp', 'inner_t', 'outer_t', 'water_t', 'expected_t', 'is_boiler_on'];
 const SERVER_PORT = 7300;
 
 const app = new Koa();
 const websocketMiddleware = websocket();
 const wss = websocketMiddleware.server;
 
-logger.trace('Setup server...');
+logger.info('Setup server...');
 
 const methods = {
   getAllSensorsTemperature,
 
 };
-
-logger.info('Current user is: ', require("os").userInfo().username);
 
 app.use(websocketMiddleware);
 app.use(async (ctx, next) => {
@@ -46,7 +42,7 @@ app.use(static('./public'));
 
 app.listen(SERVER_PORT);
 
-logger.trace(`Server listening at port ${SERVER_PORT}`);
+logger.info(`Server listening at port ${SERVER_PORT}`);
 
 const jsonrpcNotify = (channel, params) => ({
   id: null,
@@ -68,6 +64,35 @@ const setGpioSensor = async (sensor, value) => {
 const start = async () => {
   const settings = await loadSettings();
   const outControlBurner = Gpio.accessible ? new Gpio(settings.controlBurnerOnOffPin, 'out') : null;
+  // prepare the db
+  const db = await sqlite.open(SQLITE_FILENAME, { cached: true });
+  try {
+    await db.exec(`
+    
+    CREATE TABLE records (
+      timestamp timestamp not null,
+      is_boiler_on boolean not null,
+      inner_avg float not null,
+      outer_avg float not null,
+      water_avg float not null,
+      expected_t float not null
+      )
+      
+    `);
+    logger.info('Created the table');
+  } catch (error) {
+    if (error.toString().indexOf('already exists') >= 0) {
+      logger.trace('Table already exists');
+    } else {
+      throw error;
+    } 
+  }
+  const stmtInsert = await db.prepare(`
+  
+    INSERT INTO records (timestamp, inner_avg, outer_avg, water_avg, expected_t, is_boiler_on)
+    VALUES (?, ?, ?, ?, ?, ?)
+  
+  `);
 
   // make sure the pin is turned off
   await setGpioSensor(outControlBurner, false);
@@ -77,15 +102,6 @@ const start = async () => {
     Object.assign(settings, await loadSettings());
   });
   
-  if (!await fileExists(CSV_FILENAME)) {
-    const csvFile = fs.createWriteStream(CSV_FILENAME, { flags: 'w' });
-    const csvStream = csv.format({ includeEndRowDelimiter: true });
-
-    csvStream.pipe(csvFile);
-    csvStream.write(CSV_HEADERS);
-    csvStream.end();
-  }
-
   const temperatureReader = new TemperatureReader({ config: settings });
   
   temperatureReader.startReading();
@@ -94,35 +110,40 @@ const start = async () => {
     logger.error(error);
   });
 
+  // set sensor
   temperatureReader.on('data', async (data) => {
     logger.debug({ data }, `New data received`);
 
     await setGpioSensor(outControlBurner, data.shouldStartBoiling);
   });
 
+  // WebSocket send new measurement
   temperatureReader.on('data', (data) => {
     wss.clients.forEach(client => {
       client.send(JSON.stringify(jsonrpcNotify('new_measurement', data)));
     });
   });
 
-  temperatureReader.on('data', (data) => {
-    const csvFile = fs.createWriteStream(CSV_FILENAME, { flags: 'a' });
-    const csvStream = csv.format({ 
-      includeEndRowDelimiter: true,
-      writeHeaders: false,
-     });
+  // SQLite write every 5 seconds
+  let lastRecord = null;
+
+  temperatureReader.on('data', async (data) => {
+    if (new Date() - lastRecord < 5 * 1000) return;
     
-    csvStream.pipe(csvFile);
-    csvStream.write({
-      timestamp: data.timestamp,
-      inner_t: data.tokens.innerAvg,
-      outer_t: data.tokens.outerAvg,
-      water_t: data.tokens.waterAvg,
-      expected_t: data.expectedT,
-      is_boiler_on: Number(data.shouldStartBoiling),
-    });
-    csvStream.end();
+    lastRecord = new Date();
+
+    try {
+      await stmtInsert.run([
+        data.timestamp,
+        data.tokens.innerAvg,
+        data.tokens.outerAvg,
+        data.tokens.waterAvg,
+        data.expectedT,
+        data.shouldStartBoiling,
+      ]);
+    } catch (error) {
+      console.log(error);
+    }
   });
 
   const signalHandler = async signal => {
@@ -144,6 +165,9 @@ const start = async () => {
 
   process.on('SIGINT', signalHandler);
   process.on('SIGTERM', signalHandler);
+  process.on('unhandledRejection', (reason, p) => {
+    logger.error('Unhandled Rejection at: Promise', p, 'reason:', reason);
+  });
 };
 
 start()

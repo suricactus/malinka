@@ -87,6 +87,20 @@
                 <div id="chart">
                     <canvas id="chart-canvas"></canvas>
                 </div>
+                <div id="records-download">
+                    <form id="records-download-form">
+                        Изтегли записите за последните:
+                        <div class="btn-group" role="group">
+                            <button class="btn btn-outline-primary btn-sm" type="submit" value="hour">Час</button>
+                            <button class="btn btn-outline-primary btn-sm" type="submit" value="day">Ден</button>
+                            <button class="btn btn-outline-primary btn-sm" type="submit" value="week">Седмица</button>
+                            <button class="btn btn-outline-primary btn-sm" type="submit" value="month">Месец</button>
+                            <button class="btn btn-outline-primary btn-sm" type="submit" value="quartile">Тримесечие</button>
+                            <button class="btn btn-outline-primary btn-sm" type="submit" value="half">Полугодие</button>
+                            <button class="btn btn-outline-primary btn-sm" type="submit" value="year">Година</button>
+                        </div>
+                    </form>
+                </div>
             </div>
             <div class="col-sm-6">
                 <div class="p-2">
@@ -469,9 +483,30 @@
             }
         };
 
+        const MAX_CHART_RECORDS = 100;
         const rpcServer = new RpcServer({
             url: `ws://${new URL(window.location.href).host}`
         });
+
+        rpcServer.get('/api/records')
+            .then((data) => {
+                const dataHash = {};
+
+                for (const row of data) {
+                    for (const [key, val] of Object.entries(row)) {
+                        dataHash[key] = dataHash[key] || [];
+                        dataHash[key].push(val);
+                    }
+                }
+
+                chart.config.data.labels = [...dataHash.timestamp, ...chart.config.data.labels];
+                chart.config.data.datasets[0].data = [...dataHash.inner_avg, ...chart.config.data.datasets[0].data];
+                chart.config.data.datasets[1].data = [...dataHash.outer_avg, ...chart.config.data.datasets[1].data];
+                chart.config.data.datasets[2].data = [...dataHash.water_avg, ...chart.config.data.datasets[2].data];
+                chart.config.data.datasets[3].data = [...dataHash.expected_t, ...chart.config.data.datasets[3].data];
+
+                chart.update();
+            });
 
         rpcServer.on('new_measurement', ({
             data
@@ -483,20 +518,25 @@
             eIsBoilerOn.innerText = data.shouldStartBoiling ? 'да' : 'не';
             eIsBoilerOn.parentElement.parentElement.style.backgroundColor = data.shouldStartBoiling ? '#AAFFAA' : '#FFAAAA';
 
-            if (chart) {
-                chart.config.data.labels.push(new Date(data.timestamp));
-                chart.config.data.datasets[0].data.push(round(data.tokens.innerAvg));
-                chart.config.data.datasets[1].data.push(round(data.tokens.outerAvg));
-                chart.config.data.datasets[2].data.push(round(data.tokens.waterAvg));
-                chart.config.data.datasets[3].data.push(round(data.expectedT));
-                chart.update();
-            } else {
-                chart = drawChart({
-                    labels: [data.timestamp],
-                    innerT: [data.innerT],
-                    outerT: [data.outerT],
-                    waterT: [data.waterT],
-                });
+            chart.config.data.labels.push(data.timestamp);
+            chart.config.data.datasets[0].data.push(round(data.tokens.innerAvg));
+            chart.config.data.datasets[1].data.push(round(data.tokens.outerAvg));
+            chart.config.data.datasets[2].data.push(round(data.tokens.waterAvg));
+            chart.config.data.datasets[3].data.push(round(data.expectedT));
+            chart.update();
+
+            const now = new Date();
+            const tenMinutesAgo = new Date(now - 10 * 60 * 1000);
+            let lastTimestamp = new Date(chart.config.data.labels[0]);
+            
+            while (lastTimestamp < tenMinutesAgo) {
+                chart.config.data.labels.shift();
+
+                for (const dataset of chart.config.data.datasets) {
+                    dataset.data.shift();
+                }
+                
+                lastTimestamp = new Date(chart.config.data.labels[0]);
             }
         });
 
@@ -511,6 +551,13 @@
 
         $sensorsFormToggleBtn.addEventListener('click', () => {
             $sensorsForm.classList.remove('d-none');
+
+            if (window.scroll) {
+                window.scroll({
+                    top: $sensorsForm.getBoundingClientRect().top + window.scrollY,
+                    behavior: 'smooth'
+                });
+            }
 
             $sensorsList.hidden = true;
             $sensorsFormLoading.hidden = false;
@@ -641,6 +688,13 @@
 
             if (!isConfirmed) return;
 
+            if (window.scroll) {
+                window.scroll({
+                    top: $settingsForm.getBoundingClientRect().top + window.scrollY,
+                    behavior: 'smooth'
+                });
+            }
+
             $settingsLoading.hidden = false;
             $settingsErrors.hidden = true;
             $settingsResetBtn.disabled = true;
@@ -720,8 +774,6 @@
         });
 
         // Connection opened
-        let chart = null;
-
         const eInnerValue = document.querySelector('#inner-t .value');
         const eOuterValue = document.querySelector('#outer-t .value');
         const eWaterValue = document.querySelector('#water-t .value');
@@ -729,8 +781,8 @@
         const eIsBoilerOn = document.querySelector('#is-boiler-on .value');
 
         const drawChart = ({
-            timestamp = [], innerT = [], outerT = [], waterT = [], expectedT = []
-        }) => {
+            timestamp = [], innerAvg = [], outerAvg = [], waterAvg = [], expectedT = []
+        } = {}) => {
             const config = {
                 type: 'line',
                 data: {
@@ -740,19 +792,19 @@
                         backgroundColor: 'orange',
                         borderColor: 'orange',
                         fill: false,
-                        data: innerT,
+                        data: innerAvg,
                     }, {
                         label: 'Външна t ℃',
                         backgroundColor: 'red',
                         borderColor: 'red',
                         fill: false,
-                        data: outerT,
+                        data: outerAvg,
                     }, {
                         label: 'Вода t ℃',
                         backgroundColor: 'blue',
                         borderColor: 'blue',
                         fill: false,
-                        data: waterT,
+                        data: waterAvg,
                     }, {
                         label: 'Изчислена t ℃',
                         backgroundColor: 'green',
@@ -804,8 +856,35 @@
             return new Chart(ctx, config);
         };
 
-        window.onload = () => {};
-    </script>
+        const chart = drawChart();
+        const $recordsDownloadForm = document.querySelector('#records-download-form');
+
+        $recordsDownloadForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
+
+            const startDate = {
+                hour: () => new Date(new Date() - (60 * 60 * 1000)),
+                day: () => new Date(new Date() - (24 * 60 * 60 * 1000)),
+                week: () => new Date(new Date() - (7 * 24 * 60 * 60 * 1000)),
+                month: () => new Date(new Date() - (31 * 7 * 24 * 60 * 60 * 1000)),
+                quartile: () => new Date(new Date() - (3 * 31 * 7 * 24 * 60 * 60 * 1000)),
+                half: () => new Date(new Date() - (6 * 31 * 7 * 24 * 60 * 60 * 1000)),
+                year: () => new Date(new Date() - (366 * 31 * 7 * 24 * 60 * 60 * 1000)),
+            };
+
+            const start = startDate[event.explicitOriginalTarget.value]().toISOString();
+            
+            const w = window.open(`/api/records?download=1&start=${start}`);
+
+            setTimeout(() => {
+                if (w) {
+                    w.close();
+                }
+            }, 2000);
+
+        });
+
+</script>
 
 </body>
 
