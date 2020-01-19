@@ -71,7 +71,7 @@ router.get('/records', async (ctx) => {
     return;
   }
 
-  const cols = ['timestamp', 'inner_avg', 'outer_avg', 'water_avg', 'expected_t', 'is_boiler_on'];
+  const cols = ['timestamp', 'inner_avg', 'outer_avg', 'water_avg', 'expected_t', 'is_boiler_on', 'has_err_r_sensor'];
   const stream = csv.format();
 
   stream.write(cols);

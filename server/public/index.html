@@ -39,8 +39,10 @@
 
     <div class="container-fluid">
         <div class="row">
+            
             <div class="col-sm-6">
                 <div class="card">
+                    <div id="has-error-reading-sensor" class="alert alert-danger m-3" hidden>Грешка при четене на датчик</div>
                     <div class="row">
                         <div class="col-sm-4">
                             <div class="card-body">
@@ -90,7 +92,7 @@
                 <div id="records-download">
                     <form id="records-download-form">
                         Изтегли записите за последните:
-                        <div class="btn-group" role="group">
+                        <div class="btn-group flex-wrap" role="group">
                             <button class="btn btn-outline-primary btn-sm" type="submit" value="hour">Час</button>
                             <button class="btn btn-outline-primary btn-sm" type="submit" value="day">Ден</button>
                             <button class="btn btn-outline-primary btn-sm" type="submit" value="week">Седмица</button>
@@ -143,21 +145,21 @@
                             <small class="form-text text-muted">Периодът през който ще се отчитат датчиците и ще се преизчислява дали да започне подгряване или не. Свръх ниски стойности (под 1 секунда) могат да доведат до забавяния на системата.</small>
                         </div>
                         <div class="form-group col-md-12">
-                            <label for="settings-controlBurnerOnOffPin">Номер на изходен крак за горелката</label>
+                            <label for="settings-controlBurnerOnOffPin">Номер на изходен GPIO крак за горелката</label>
                             <input type="number" class="form-control" id="settings-controlBurnerOnOffPin" name="controlBurnerOnOffPin" min="1" max="40" step="1">
-                            <small class="form-text text-muted">Изходен крак на платката, на който се подава флаг за контрол на горелката, като
-                    наличието на сигнал се приема за включено.</small>
+                            <small class="form-text text-muted">Изходен GPIO крак на платката, на който се подава флаг за контрол на горелката, като
+                    наличието на сигнал се приема за включено. GPIO номерацията не отговаря на физическото разположение на крачетата върху платката.</small>
                         </div>
                         <div class="form-group col-md-12">
-                            <label for="settings-controlPumpOnOffPin">Номер на изходен крак за помпата</label>
+                            <label for="settings-controlPumpOnOffPin">Номер на изходен GPIO крак за помпата</label>
                             <input type="number" class="form-control" id="settings-controlPumpOnOffPin" name="controlPumpOnOffPin" min="1" max="40" step="1">
-                            <small class="form-text text-muted">Изходен крак на платката, на който се подава флаг за контрол на помпата, като наличието на сигнал се приема за включено.</small>
+                            <small class="form-text text-muted">Изходен GPIO крак на платката, на който се подава флаг за контрол на помпата, като наличието на сигнал се приема за включено. GPIO номерацията не отговаря на физическото разположение на крачетата върху платката.</small>
                         </div>
                         <div class="form-group col-md-12">
-                            <label for="settings-alarmBurnerInPin">Номер на входен крак за аларма</label>
+                            <label for="settings-alarmBurnerInPin">Номер на входен GPIO крак за аларма</label>
                             <input type="number" class="form-control" id="settings-alarmBurnerInPin" name="alarmBurnerInPin" min="1" max="40" step="1">
-                            <small class="form-text text-muted">Входен крак на платката, на който се подава флаг за аларма на горелката, като
-                    наличието на сигнал се приема за наличие на аларма и ще изпрати предупреждение за проблем.</small>
+                            <small class="form-text text-muted">Входен GPIO крак на платката, на който се подава флаг за аларма на горелката, като
+                    наличието на сигнал се приема за наличие на аларма и ще изпрати предупреждение за проблем. GPIO номерацията не отговаря на физическото разположение на крачетата върху платката.</small>
                         </div>
                         <div class="form-group col-md-12">
                             <label for="settings-minOuterToStartBoilingT">Минимална външна t за започване на подгряване, в ℃</label>
@@ -517,6 +519,7 @@
             eExpectedValue.innerText = _n(data.expectedT);
             eIsBoilerOn.innerText = data.shouldStartBoiling ? 'да' : 'не';
             eIsBoilerOn.parentElement.parentElement.style.backgroundColor = data.shouldStartBoiling ? '#AAFFAA' : '#FFAAAA';
+            eHasErrorReadingSensor.hidden = !data.hasErrorReadingSensor;
 
             chart.config.data.labels.push(data.timestamp);
             chart.config.data.datasets[0].data.push(round(data.tokens.innerAvg));
@@ -774,6 +777,7 @@
         });
 
         // Connection opened
+        const eHasErrorReadingSensor = document.querySelector('#has-error-reading-sensor');
         const eInnerValue = document.querySelector('#inner-t .value');
         const eOuterValue = document.querySelector('#outer-t .value');
         const eWaterValue = document.querySelector('#water-t .value');

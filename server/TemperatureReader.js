@@ -83,7 +83,7 @@ class TemperatureReader extends EventEmitter {
       
       tokens[`${purposeLower}Avg`] = average(values);
     }
-    
+
     return tokens;
   }
 
@@ -94,10 +94,25 @@ class TemperatureReader extends EventEmitter {
         .filter(([uid, purpose]) => purpose !== PURPOSE_NONE)
         .map(([uid]) => uid);
 
-      const sensorValues = await Promise.all(uids.map(uid => getSensorValue(uid, true)));
+      const sensorResults = await Promise.allSettled(uids.map(uid => getSensorValue(uid, true)));
+      const sensorValues = [];
+      let hasErrorReadingSensor = false;
+
+      for (const [index, { status, reason, value }] of sensorResults.entries()) {
+        if (status === 'fulfilled') {
+          sensorValues.push(value);
+        } else {
+          hasErrorReadingSensor = true;
+          sensorValues.push({
+            uid: uids[index],
+            value: null,
+          });
+        }
+      }
+
       const tokens = this._sensorValuesToTokens({ sensorValues });
       const expectedT = this._calcExpectedTemperature({ tokens });
-      const shouldStartBoiling = this._calcShouldStartBoiling({ tokens, expectedT });
+      const shouldStartBoiling = hasErrorReadingSensor ? false : this._calcShouldStartBoiling({ tokens, expectedT });
 
       this.isBoilerOn = shouldStartBoiling;
   
@@ -106,6 +121,7 @@ class TemperatureReader extends EventEmitter {
         tokens,
         expectedT,
         shouldStartBoiling,
+        hasErrorReadingSensor,
       });
     } catch (error) {
       this.emit('error', {

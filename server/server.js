@@ -72,6 +72,7 @@ const start = async () => {
     CREATE TABLE records (
       timestamp timestamp not null,
       is_boiler_on boolean not null,
+      has_err_r_sensor boolean not null,
       inner_avg float not null,
       outer_avg float not null,
       water_avg float not null,
@@ -89,8 +90,8 @@ const start = async () => {
   }
   const stmtInsert = await db.prepare(`
   
-    INSERT INTO records (timestamp, inner_avg, outer_avg, water_avg, expected_t, is_boiler_on)
-    VALUES (?, ?, ?, ?, ?, ?)
+    INSERT INTO records (timestamp, inner_avg, outer_avg, water_avg, expected_t, is_boiler_on, has_err_r_sensor)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
   
   `);
 
@@ -140,6 +141,7 @@ const start = async () => {
         data.tokens.waterAvg,
         data.expectedT,
         data.shouldStartBoiling,
+        data.hasErrorReadingSensor,
       ]);
     } catch (error) {
       console.log(error);
