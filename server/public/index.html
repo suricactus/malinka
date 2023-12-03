@@ -151,12 +151,12 @@
                     наличието на сигнал се приема за включено. GPIO номерацията не отговаря на физическото разположение на крачетата върху платката.</small>
                         </div>
                         <div class="form-group col-md-12">
-                            <label for="settings-controlPumpOnOffPin">Номер на изходен GPIO крак за помпата</label>
+                            <label for="settings-controlPumpOnOffPin">Номер на изходен GPIO крак за помпата НЕАКТИВНА</label>
                             <input type="number" class="form-control" id="settings-controlPumpOnOffPin" name="controlPumpOnOffPin" min="1" max="40" step="1">
                             <small class="form-text text-muted">Изходен GPIO крак на платката, на който се подава флаг за контрол на помпата, като наличието на сигнал се приема за включено. GPIO номерацията не отговаря на физическото разположение на крачетата върху платката.</small>
                         </div>
                         <div class="form-group col-md-12">
-                            <label for="settings-alarmBurnerInPin">Номер на входен GPIO крак за аларма</label>
+                            <label for="settings-alarmBurnerInPin">Номер на входен GPIO крак за аларма НЕАКТИВНА</label>
                             <input type="number" class="form-control" id="settings-alarmBurnerInPin" name="alarmBurnerInPin" min="1" max="40" step="1">
                             <small class="form-text text-muted">Входен GPIO крак на платката, на който се подава флаг за аларма на горелката, като
                     наличието на сигнал се приема за наличие на аларма и ще изпрати предупреждение за проблем. GPIO номерацията не отговаря на физическото разположение на крачетата върху платката.</small>
@@ -192,7 +192,7 @@
                             <small class="form-text text-muted">Максимална разрешена t на водата, над която котелът винаги ще седи изключен. Защита против прегряване.</small>
                         </div>
                         <div class="form-group col-md-12">
-                            <label for="settings-criticalAlarmWaterT">Критична t, в ℃</label>
+                            <label for="settings-criticalAlarmWaterT">Критична t, в ℃ НЕАКТИВНА</label>
                             <div class="input-group mb-2 mr-sm-2">
                                 <input type="number" class="form-control" id="settings-criticalAlarmWaterT" name="criticalAlarmWaterT" min="1" max="90" step="1">
                                 <div class="input-group-append">
@@ -284,7 +284,7 @@
                                 <div class="form-group col-md-3">
                                     <label class="d-block d-sm-none" for="sensor-uid">Предназначение</label>
                                     <select id="sensor-purpose" class="form-control" name="purpose">
-                                        <option value="ignore" selected="selected">Игнориран</option>
+                                        <option value="none" selected="selected">Игнориран</option>
                                         <option value="inner">Вътрешен</option>
                                         <option value="outer">Външен</option>
                                         <option value="water">Воден</option>
@@ -863,29 +863,29 @@
         const chart = drawChart();
         const $recordsDownloadForm = document.querySelector('#records-download-form');
 
-        $recordsDownloadForm.addEventListener('submit', async (event) => {
-            event.preventDefault();
+        $recordsDownloadForm.querySelectorAll('button').forEach($el => {
+            $el.addEventListener('click', async (event) => {
+                event.preventDefault();
 
-            const startDate = {
-                hour: () => new Date(new Date() - (60 * 60 * 1000)),
-                day: () => new Date(new Date() - (24 * 60 * 60 * 1000)),
-                week: () => new Date(new Date() - (7 * 24 * 60 * 60 * 1000)),
-                month: () => new Date(new Date() - (31 * 7 * 24 * 60 * 60 * 1000)),
-                quartile: () => new Date(new Date() - (3 * 31 * 7 * 24 * 60 * 60 * 1000)),
-                half: () => new Date(new Date() - (6 * 31 * 7 * 24 * 60 * 60 * 1000)),
-                year: () => new Date(new Date() - (366 * 31 * 7 * 24 * 60 * 60 * 1000)),
-            };
+                const startDate = {
+                    hour: () => new Date(new Date() - (60 * 60 * 1000)),
+                    day: () => new Date(new Date() - (24 * 60 * 60 * 1000)),
+                    week: () => new Date(new Date() - (7 * 24 * 60 * 60 * 1000)),
+                    month: () => new Date(new Date() - (31 * 7 * 24 * 60 * 60 * 1000)),
+                    quartile: () => new Date(new Date() - (3 * 31 * 7 * 24 * 60 * 60 * 1000)),
+                    half: () => new Date(new Date() - (6 * 31 * 7 * 24 * 60 * 60 * 1000)),
+                    year: () => new Date(new Date() - (366 * 31 * 7 * 24 * 60 * 60 * 1000)),
+                };
+ 
+                const start = startDate[event.target.value]().toISOString();
+                const w = window.open(`/api/records?download=1&start=${start}`);
 
-            const start = startDate[event.explicitOriginalTarget.value]().toISOString();
-            
-            const w = window.open(`/api/records?download=1&start=${start}`);
-
-            setTimeout(() => {
-                if (w) {
-                    w.close();
-                }
-            }, 2000);
-
+                setTimeout(() => {
+                    if (w) {
+                        w.close();
+                    }
+                }, 2000);
+            });
         });
 
 </script>
