@@ -14,3 +14,19 @@ directory=/usr/share/tec-osogovska
 stderr_logfile=/var/log/tec-osogovska.err.log
 stdout_logfile=/var/log/tec-osogovska.out.log
 ```
+
+Restarting the service:
+
+```
+sudo supervisorctl -c /etc/supervisor/supervisord.conf restart tec-osogovska
+```
+
+## Debugging
+
+Check the logs:
+
+```
+less /var/log/tec-osogovska.err.log
+```
+
+
