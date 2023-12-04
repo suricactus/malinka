@@ -3,10 +3,11 @@ const Router = require('@koa/router');
 const bodyParser = require('koa-bodyparser');
 const sqlite = require('sqlite');
 const csv = require('fast-csv');
+const Gpio = require('onoff').Gpio;
 
 const { SQLITE_FILENAME } = require('./constants');
 const { loadSettings, resetSettings, patchSettings } = require('./utils');
-const { getAllSensors } = require('./hw');
+const { getAllSensors, setGpioSensorValue } = require('./hw');
 
 const app = new Koa();
 const router = new Router();
@@ -30,6 +31,16 @@ router.post('/settings/reset', async (ctx) => {
 
 router.get('/sensors', async (ctx) => {
   ctx.body = await getAllSensors();
+});
+
+router.post('/set-status-on', async (ctx) => {
+  const isStatusOn = ctx.request.body.isStatusOn;
+  const settings = await loadSettings();
+  const statusOnSensor = Gpio.accessible ? new Gpio(settings.controlPumpOnOffPin, 'out') : null;
+
+  await setGpioSensorValue(statusOnSensor, isStatusOn);
+
+  ctx.body = { isStatusOn };
 });
 
 router.post('/sensors', async (ctx) => {

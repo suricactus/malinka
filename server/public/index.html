@@ -92,6 +92,7 @@
                         </div>
                     </div>
                 </div>
+                <button id="set-status-btn" class="btn btn-block btn-primary">Включи/Изключи</button>
             </div>
             <div class="col-sm-6">
                 <div id="chart">
@@ -915,6 +916,12 @@
                 }, 2000);
             });
         });
+
+      let isStatusOn = false;
+      document.querySelector('#set-status-btn').addEventListener('click', async (event) => {
+         isStatusOn = !isStatusOn;
+         const response = await rpcServer.post('/api/set-status-on', { isStatusOn, });
+      });
 
 </script>
 
