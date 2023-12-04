@@ -510,6 +510,10 @@
                     }
                 }
 
+                if (Object.keys(dataHash).length === 0) {
+                    return;
+                }
+
                 chart.config.data.labels = [...dataHash.timestamp, ...chart.config.data.labels];
                 chart.config.data.datasets[0].data = [...dataHash.inner_avg, ...chart.config.data.datasets[0].data];
                 chart.config.data.datasets[1].data = [...dataHash.outer_avg, ...chart.config.data.datasets[1].data];
