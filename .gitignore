@@ -1,0 +1,5 @@
+.vscode
+*.backup
+config.json
+records.db
+
