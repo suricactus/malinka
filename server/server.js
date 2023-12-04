@@ -144,7 +144,7 @@ const start = async () => {
         data.hasErrorReadingSensor,
       ]);
     } catch (error) {
-      console.log(error);
+      logger.error(error);
     }
   });
 
