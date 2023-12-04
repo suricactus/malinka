@@ -297,6 +297,7 @@
                                         <div class="input-group-append">
                                             <div class="input-group-text">℃</div>
                                         </div>
+                                        <div id="sensor-error" class="invalid-feedback"></div>
                                     </div>
                                 </div>
                                 <div class="form-group col-md-3">
@@ -582,12 +583,13 @@
                     $sensorsList.hidden = false;
 
                     for (const [sensorUid, {
-                            value, purpose, offsetT
+                            value, purpose, offsetT, error
                         }] of Object.entries(sensors)) {
                         if (!document.querySelector(`#sensor-uid-${sensorUid}`)) {
                             const $clone = document.importNode($template.content, true);
                             const $purpose = $clone.querySelector('#sensor-purpose');
                             const $offset = $clone.querySelector('#sensor-offset');
+                            const $error = $clone.querySelector('#sensor-error');
 
                             $purpose.id = `sensor-purpose-${sensorUid}`;
                             $purpose.name = `purpose-${sensorUid}`;
@@ -595,6 +597,8 @@
 
                             $offset.id = `sensor-offset-${sensorUid}`;
                             $offset.value = offsetT;
+
+                            $error.id = `sensor-error-${sensorUid}`;
 
                             $clone.querySelector('#sensor-uid').id = `sensor-uid-${sensorUid}`;
                             $clone.querySelector('#sensor-value').id = `sensor-value-${sensorUid}`;
@@ -605,9 +609,19 @@
 
                         const $sensorUid = document.querySelector(`#sensor-uid-${sensorUid}`);
                         const $sensorValue = document.querySelector(`#sensor-value-${sensorUid}`);
+                        const $sensorError = document.querySelector(`#sensor-error-${sensorUid}`);
+
+                        if (error) {
+                            $sensorError.innerHTML = error;
+                            $sensorError.hidden = false;
+                        } else {
+                            $sensorError.innerHTML = '';
+                            $sensorError.hidden = true;
+                        }
 
                         $sensorUid.value = sensorUid;
                         $sensorValue.value = value;
+			$sensorValue.classList.toggle('is-invalid', !!error);
                     }
 
                     const uselessSensorRows = Array.from(document.querySelectorAll('.sensor-row'))
