@@ -72,7 +72,9 @@ class TemperatureReader extends EventEmitter {
       sensorsByPurpose[purpose].push(average(this.records[uid]));
     }
     
-    const tokens = {};
+    const tokens = {
+      referenceInnerT: this.config.referenceInnerT,
+    };
     
     for (const [purpose, values] of Object.entries(sensorsByPurpose)) {
       const purposeLower = purpose.toLowerCase();

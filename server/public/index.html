@@ -54,6 +54,14 @@
 
                         <div class="col-sm-4">
                             <div class="card-body">
+                                <div id="reference-t" class="card">
+                                    <div class="card-body">Желана t ℃ <span class="value float-right"></span></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-sm-4">
+                            <div class="card-body">
                                 <div id="inner-t" class="card">
                                     <div class="card-body">Вътрешна t ℃ <span class="value float-right"></span></div>
                                 </div>
@@ -514,6 +522,7 @@
         rpcServer.on('new_measurement', ({
             data
         }) => {
+            eReferenceValue.innerText = _n(data.tokens.referenceInnerT);
             eInnerValue.innerText = _n(data.tokens.innerAvg);
             eOuterValue.innerText = _n(data.tokens.outerAvg);
             eWaterValue.innerText = _n(data.tokens.waterAvg);
@@ -792,6 +801,7 @@
 
         // Connection opened
         const eHasErrorReadingSensor = document.querySelector('#has-error-reading-sensor');
+        const eReferenceValue = document.querySelector('#reference-t .value');
         const eInnerValue = document.querySelector('#inner-t .value');
         const eOuterValue = document.querySelector('#outer-t .value');
         const eWaterValue = document.querySelector('#water-t .value');
