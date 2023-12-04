@@ -1,6 +1,7 @@
 const assert = require('assert');
 const fs = require('fs').promises;
 const path = require('path');
+const logger = require('./logger');
 const { loadSettings, roundTo } = require('./utils');
 const {
   PURPOSE_NONE,
@@ -80,9 +81,21 @@ const getSensorValue = async (uid, shouldApplyOffset) => {
   return { uid, value: await getSensorTemperature(uid, shouldApplyOffset) };
 };
 
+const setGpioSensorValue = async (sensor, value) => {
+  logger.trace('Sensor value changed', sensor, value);
+
+  if (!sensor) return;
+
+  value = value ? 1 : 0;
+
+  return sensor.write(value);
+};
+
+
 module.exports = {
   getSensorTemperature,
   getSensorValue,
   getAllSensorsUids,
   getAllSensors,
+  setGpioSensorValue,
 };

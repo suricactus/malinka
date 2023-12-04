@@ -12,7 +12,7 @@ const { CONFIG_FILENAME, SQLITE_FILENAME } = require('./constants');
 const TemperatureReader = require('./TemperatureReader');
 const logger = require('./logger');
 const { fileExists, loadSettings } = require('./utils');
-const { getAllSensorsTemperature } = require('./hw');
+const { getAllSensorsTemperature, setGpioSensorValue } = require('./hw');
 const api = require('./api');
 
 const SERVER_PORT = 7300;
@@ -51,16 +51,6 @@ const jsonrpcNotify = (channel, params) => ({
   params,
 });
 
-const setGpioSensor = async (sensor, value) => {
-  logger.trace('Sensor value changed', sensor, value);
-
-  if (!sensor) return;
-  
-  value = value ? 1 : 0;
-
-  return sensor.write(value);
-};
-
 const start = async () => {
   const settings = await loadSettings();
   const outControlBurner = Gpio.accessible ? new Gpio(settings.controlBurnerOnOffPin, 'out') : null;
@@ -96,7 +86,7 @@ const start = async () => {
   `);
 
   // make sure the pin is turned off
-  await setGpioSensor(outControlBurner, false);
+  await setGpioSensorValue(outControlBurner, false);
 
   fs.watch(CONFIG_FILENAME, async (eventType, filename) => {
     logger.info(`Config file changed: event "${eventType}" of file "${filename}"`)
@@ -115,7 +105,7 @@ const start = async () => {
   temperatureReader.on('data', async (data) => {
     logger.debug({ data }, `New data received`);
 
-    await setGpioSensor(outControlBurner, data.shouldStartBoiling);
+    await setGpioSensorValue(outControlBurner, data.shouldStartBoiling);
   });
 
   // WebSocket send new measurement
@@ -154,7 +144,7 @@ const start = async () => {
 
       if (!outControlBurner) return;
 
-      await setGpioSensor(outControlBurner, false);
+      await setGpioSensorValue(outControlBurner, false);
   
       outControlBurner.unexport();
     } catch (error) {
