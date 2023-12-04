@@ -42,14 +42,26 @@ const getAllSensors = async () => {
   const settings = await loadSettings();
   const sensors = await getAllSensorsUids();
   const promises = sensors.map(s => getSensorTemperature(s));
-  const temperatures = await Promise.all(promises);
-  const data = sensors.reduce((d, uid, i) => ({
-    ...d,
-    [uid]: {
-      uid,
-      value: temperatures[i],
-    },
-  }), {});
+  const temperatures = await Promise.allSettled(promises);
+  const data = sensors
+    .reduce((d, uid, i) => {
+      const result = temperatures[i];
+      const value = (result.status === 'fulfilled')
+        ? result.value
+        : null;
+      const error = result.status === 'rejected'
+        ? result.reason.message
+        : undefined;
+
+      return {
+        ...d,
+        [uid]: {
+          uid,
+          value,
+          error,
+        },
+      };
+    }, {});
   
   for (const uid of Object.keys(data)) {
     const uidSettings = settings.sensors[uid] || {};
